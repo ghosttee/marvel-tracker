@@ -1,12 +1,12 @@
 import { useState } from 'react'
 
 const MCU_MOVIES = [
-  { title: "Iron Man", year: 2008, phase: 1, poster: "/78lPtwv72eTNqFW9COBF8l34Ot9.jpg" },
-  { title: "The Incredible Hulk", year: 2008, phase: 1, poster: "/gKzYx79y0AQTL4UAk1cZNAs1jeW.jpg" },
-  { title: "Iron Man 2", year: 2010, phase: 1, poster: "/6WBeq4fCfn7AN33GmGME0vWKRZH.jpg" },
-  { title: "Thor", year: 2011, phase: 1, poster: "/prSfAi1xGrhLQNxqoCs74B8ZBqQ.jpg" },
-  { title: "Captain America: The First Avenger", year: 2011, phase: 1, poster: "/vSNxAJTeplLKGVEq7RUoTTfDuea.jpg" },
-  { title: "The Avengers", year: 2012, phase: 1, poster: "/RYMX2wcKCBAr24UyPD7KE3ro0Q.jpg" },
+  { title: "Iron Man", year: 2008, phase: 1, poster: "/A1oB9dMzRfRnPjuXACqHRYqHFuL.jpg" },
+{ title: "The Incredible Hulk", year: 2008, phase: 1, poster: "/gKzYx79y0AQTL4UAk1cZNAs1jeW.jpg" },
+{ title: "Iron Man 2", year: 2010, phase: 1, poster: "/6WBeq4fCfn7AN33GmGME0vWKRZH.jpg" },
+{ title: "Thor", year: 2011, phase: 1, poster: "/bIuOWTtyFPjsFDevqvF3QnheVoO.jpg" },
+{ title: "Captain America: The First Avenger", year: 2011, phase: 1, poster: "/vSNxAJTeplLKGVEq7RUoTTfDuea.jpg" },
+{ title: "The Avengers", year: 2012, phase: 1, poster: "/RYMX2wcKCBAr24UyPD7KE3ro0Q.jpg" },
   { title: "Iron Man 3", year: 2013, phase: 2, poster: "/qhPtAc1TKbMPqNvcdXSOn9Bn7hZ.jpg" },
   { title: "Thor: The Dark World", year: 2013, phase: 2, poster: "/bnOf9JMCqL4YxSJdUbCbJt3MNbh.jpg" },
   { title: "Captain America: The Winter Soldier", year: 2014, phase: 2, poster: "/tVFRpFw3xTedgPGqxW0AOI8Qhh0.jpg" },
