@@ -150,7 +150,7 @@ export default function App() {
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '3rem 1.5rem 4rem' }}>
 
         <div style={{ marginBottom: '3rem' }}>
-          <p style={{ fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#999', fontFamily: 'Geistn, sans-serif', marginBottom: 12 }}>
+          <p style={{ fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#999', fontFamily: 'Geist, sans-serif', marginBottom: 12 }}>
             Marvel Cinematic Universe
           </p>
           <h1 style={{ fontSize: 'clamp(2.2rem, 6vw, 3.2rem)', fontWeight: 400, lineHeight: 1.15, color: '#1a1a1a', margin: '0 0 1.5rem' }}>
