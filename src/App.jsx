@@ -36,8 +36,8 @@ const MCU_MOVIES = [
   { title: "The Marvels", year: 2023, phase: 5, tmdbId: 609681 },
   { title: "Captain America: Brave New World", year: 2025, phase: 5, tmdbId: 822119 },
   { title: "Thunderbolts*", year: 2025, phase: 5, tmdbId: 986056 },
-  { title: "The Fantastic Four: First Steps", year: 2025, phase: 6, tmdbId: 1214508 },
-  { title: "Spider-Man: Brand New Day", year: 2026, phase: 6, tmdbId: 986057 },
+  { title: "The Fantastic Four: First Steps", year: 2025, phase: 6, tmdbId: 617126 },
+  { title: "Spider-Man: Brand New Day", year: 2026, phase: 6, tmdbId: 969681 },
 ]
 
 const PHASE_META = {
@@ -150,7 +150,7 @@ export default function App() {
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '3rem 1.5rem 4rem' }}>
 
         <div style={{ marginBottom: '3rem' }}>
-          <p style={{ fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#999', fontFamily: 'system-ui, sans-serif', marginBottom: 12 }}>
+          <p style={{ fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#999', fontFamily: 'Geistn, sans-serif', marginBottom: 12 }}>
             Marvel Cinematic Universe
           </p>
           <h1 style={{ fontSize: 'clamp(2.2rem, 6vw, 3.2rem)', fontWeight: 400, lineHeight: 1.15, color: '#1a1a1a', margin: '0 0 1.5rem' }}>
