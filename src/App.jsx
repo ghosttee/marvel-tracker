@@ -150,17 +150,17 @@ export default function App() {
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '3rem 1.5rem 4rem' }}>
 
         <div style={{ marginBottom: '3rem' }}>
-          <p style={{ fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#999', fontFamily: 'Geist, sans-serif', marginBottom: 12 }}>
+          <p style={{ fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#999', fontFamily: "'Geist', sans-serif", marginBottom: 12 }}>
             Marvel Cinematic Universe
           </p>
           <h1 style={{ fontSize: 'clamp(2.2rem, 6vw, 3.2rem)', fontWeight: 400, lineHeight: 1.15, color: '#1a1a1a', margin: '0 0 1.5rem' }}>
             <em>Watch</em> every film<br />before Doomsday.
           </h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 14, color: '#666', fontFamily: 'system-ui, sans-serif' }}>
+            <span style={{ fontSize: 14, color: '#666', fontFamily: "'Geist', sans-serif" }}>
               {watchedCount} watched — {MCU_MOVIES.length - watchedCount} remaining — {MCU_MOVIES.length} total
             </span>
-            {SB_KEY && <span style={{ fontSize: 12, color: '#888', fontFamily: 'system-ui, sans-serif' }}>✓ synced</span>}
+            {SB_KEY && <span style={{ fontSize: 12, color: '#888', fontFamily: "'Geist', sans-serif" }}>✓ synced</span>}
           </div>
         </div>
 
@@ -168,7 +168,7 @@ export default function App() {
           <div style={{ height: 3, background: '#E5E2DA', borderRadius: 2, overflow: 'hidden', marginBottom: 8 }}>
             <div style={{ height: '100%', width: `${pct}%`, background: '#1a1a1a', borderRadius: 2, transition: 'width 0.6s ease' }} />
           </div>
-          <p style={{ fontSize: 12, color: '#aaa', fontFamily: 'system-ui, sans-serif', margin: 0 }}>{pct}% complete</p>
+          <p style={{ fontSize: 12, color: '#aaa', fontFamily: "'Geist', sans-serif", margin: 0 }}>{pct}% complete</p>
         </div>
 
         <div style={{ display: 'flex', gap: 8, marginBottom: '3rem' }}>
