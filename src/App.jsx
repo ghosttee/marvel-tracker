@@ -57,6 +57,99 @@ const SB_KEY = import.meta.env.VITE_SUPABASE_KEY || ""
 
 const supabase = createClient(SB_URL, SB_KEY)
 
+const DOOMSDAY = new Date('2026-12-18T00:00:00')
+
+function daysUntil(date) {
+  return Math.max(0, Math.ceil((date - new Date()) / 86400000))
+}
+
+function FloatingCountdown({ filmsLeft, totalFilms, watchedCount, nextUnwatched }) {
+  const daysRemaining = daysUntil(DOOMSDAY)
+  if (filmsLeft === 0 || daysRemaining === 0) return null
+
+  const daysPerFilm = daysRemaining / filmsLeft
+  const paceLabel = daysPerFilm >= 7 ? 'doable' : daysPerFilm >= 3 ? 'steady pace' : daysPerFilm >= 1 ? 'tight pace' : 'urgent'
+  const paceTone = daysPerFilm >= 3 ? '#6a6a6a' : daysPerFilm >= 1 ? '#f5d36a' : '#ff6a3d'
+  const dotsLit = Math.min(10, Math.round((watchedCount / totalFilms) * 10))
+
+  function handleResume() {
+    if (!nextUnwatched) return
+    const el = document.querySelector(`[data-movie-id="${nextUnwatched.tmdbId}"]`)
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+
+  return (
+    <div style={{ position: 'fixed', left: 0, right: 0, bottom: 32, display: 'flex', justifyContent: 'center', pointerEvents: 'none', zIndex: 50, fontFamily: 'Geist, system-ui, sans-serif' }}>
+      <div style={{
+        pointerEvents: 'auto',
+        display: 'flex', alignItems: 'stretch',
+        background: 'linear-gradient(180deg, #161618 0%, #0a0a0c 100%)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 100,
+        padding: '10px 10px 10px 24px',
+        gap: 18,
+        boxShadow: '0 24px 48px -12px rgba(0,0,0,0.4), 0 0 0 1px rgba(229, 36, 36, 0.06), 0 0 60px -10px rgba(229, 36, 36, 0.25)',
+      }}>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '8px 0' }}>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'radial-gradient(circle, rgba(229,36,36,0.18) 0%, rgba(229,36,36,0) 70%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="13" r="8" stroke="#E52424" strokeWidth="1.6"/>
+              <path d="M12 9v4l2.5 1.5" stroke="#E52424" strokeWidth="1.6" strokeLinecap="round"/>
+              <path d="M9 3h6" stroke="#E52424" strokeWidth="1.6" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+              <span style={{ fontFamily: 'Geist Mono, ui-monospace, monospace', fontSize: 24, fontWeight: 600, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1 }}>{daysRemaining}</span>
+              <span style={{ fontSize: 11, color: '#9d9d9d', letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 500 }}>days</span>
+            </div>
+            <span style={{ fontSize: 10, color: '#6a6a6a', letterSpacing: '0.04em' }}>until Avengers: Doomsday</span>
+          </div>
+        </div>
+
+        <div style={{ width: 1, background: 'linear-gradient(180deg, transparent, rgba(255,255,255,0.12) 50%, transparent)' }} />
+
+        <div style={{ display: 'flex', alignItems: 'center', padding: '8px 6px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+              <span style={{ fontFamily: 'Geist Mono, ui-monospace, monospace', fontSize: 24, fontWeight: 600, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1 }}>{filmsLeft}</span>
+              <span style={{ fontSize: 11, color: '#9d9d9d', letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 500 }}>films left</span>
+            </div>
+            <span style={{ fontSize: 10, color: paceTone, letterSpacing: '0.04em' }}>~1 every {daysPerFilm.toFixed(1)} days · {paceLabel}</span>
+          </div>
+        </div>
+
+        <div style={{ width: 1, background: 'linear-gradient(180deg, transparent, rgba(255,255,255,0.12) 50%, transparent)' }} />
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '8px 0 8px 6px' }}>
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: i < dotsLit ? '#E52424' : 'rgba(255,255,255,0.12)' }} />
+          ))}
+        </div>
+
+        <button
+          onClick={handleResume}
+          disabled={!nextUnwatched}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6, padding: '0 22px',
+            background: '#fff', color: '#0a0a0c',
+            border: 'none', borderRadius: 100,
+            fontFamily: 'inherit', fontSize: 12, fontWeight: 600, letterSpacing: '0.04em',
+            cursor: nextUnwatched ? 'pointer' : 'default',
+            opacity: nextUnwatched ? 1 : 0.5,
+          }}
+        >
+          <span>Resume</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M5 12h14m-5-5l5 5-5 5" stroke="#0a0a0c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
   const [user, setUser] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
@@ -167,6 +260,7 @@ export default function App() {
   )
   const watchedCount = MCU_MOVIES.filter(m => watched[m.title]).length
   const pct = Math.round((watchedCount / MCU_MOVIES.length) * 100)
+  const nextUnwatched = MCU_MOVIES.find(m => !watched[m.title])
 
   const byPhase = [1,2,3,4,5,6].map(ph => ({
     phase: ph,
@@ -285,7 +379,7 @@ export default function App() {
                   const isExpanded = expanded[movie.tmdbId]
 
                   return (
-                    <div key={movie.title} style={{
+                    <div key={movie.title} data-movie-id={movie.tmdbId} style={{
                       borderRadius: 14, overflow: 'hidden', background: '#fff', cursor: 'pointer',
                       boxShadow: isWatched ? '0 4px 20px rgba(0,0,0,0.10)' : '0 1px 4px rgba(0,0,0,0.06)',
                       transition: 'box-shadow 0.2s ease, transform 0.15s ease',
@@ -349,10 +443,16 @@ export default function App() {
           )
         })}
 
-        <p style={{ fontSize: 12, color: '#ccc', textAlign: 'center', marginTop: '1rem' }}>
+        <p style={{ fontSize: 12, color: '#ccc', textAlign: 'center', marginTop: '1rem', marginBottom: '6rem' }}>
           Poster images via The Movie Database (TMDB)
         </p>
       </div>
+      <FloatingCountdown
+        filmsLeft={MCU_MOVIES.length - watchedCount}
+        totalFilms={MCU_MOVIES.length}
+        watchedCount={watchedCount}
+        nextUnwatched={nextUnwatched}
+      />
     </div>
   )
 }
