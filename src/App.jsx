@@ -78,80 +78,6 @@ function useIsMobile() {
   return isMobile
 }
 
-function MovieCard({ movie, poster, isWatched, isSaving, rating, expanded, overview, onSelect, onRate, onToggleExpand }) {
-  return (
-    <motion.div
-      data-movie-id={movie.tmdbId}
-      onClick={onSelect}
-      whileHover={{ y: -4 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ type: 'spring', damping: 24, stiffness: 320 }}
-      style={{
-        borderRadius: 14, overflow: 'hidden', background: '#fff', cursor: 'pointer',
-        boxShadow: isWatched
-          ? '0 1px 2px rgba(0,0,0,0.04), 0 6px 20px -6px rgba(0,0,0,0.18)'
-          : '0 1px 2px rgba(0,0,0,0.04), 0 2px 8px -2px rgba(0,0,0,0.06)',
-        outline: isWatched ? '1.5px solid #1a1a1a' : 'none',
-        transitionProperty: 'box-shadow',
-        transitionDuration: '0.2s',
-      }}
-    >
-      <motion.div
-        layoutId={`poster-${movie.tmdbId}`}
-        transition={{ type: 'spring', damping: 30, stiffness: 320 }}
-        style={{ position: 'relative', aspectRatio: '2/3', background: '#F0EDE8', overflow: 'hidden' }}
-      >
-        {poster ? (
-          <img src={`${TMDB_IMG}${poster}`} alt={movie.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-        ) : (
-          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-            <span style={{ fontSize: 12, color: '#ccc', textAlign: 'center', lineHeight: 1.4 }}>{movie.title}</span>
-          </div>
-        )}
-        <div style={{ position: 'absolute', inset: 0, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.08)', pointerEvents: 'none' }} />
-        {isWatched && (
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M20 6L9 17L4 12" stroke="#1a1a1a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-          </div>
-        )}
-        {isSaving && <div style={{ position: 'absolute', top: 8, right: 8, width: 7, height: 7, borderRadius: '50%', background: '#F59E0B' }} />}
-      </motion.div>
-
-      <div style={{ padding: '10px 12px 12px' }}>
-        <p style={{ fontSize: 12, fontWeight: 500, margin: '0 0 2px', lineHeight: 1.35, color: '#1a1a1a', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', textWrap: 'pretty' }}>
-          {movie.title}
-        </p>
-        <p style={{ fontSize: 11, color: '#bbb', margin: '0 0 6px', fontVariantNumeric: 'tabular-nums' }}>{movie.year}</p>
-        {isWatched ? (
-          <div style={{ display: 'flex', gap: 2, marginBottom: 6 }} onClick={e => e.stopPropagation()}>
-            {[1,2,3,4,5].map(s => (
-              <span key={s} onClick={e => onRate(s, e)}
-                style={{ fontSize: 13, cursor: 'pointer', color: rating >= s ? '#1a1a1a' : '#DDD', userSelect: 'none', padding: '2px 1px' }}>★</span>
-            ))}
-          </div>
-        ) : (
-          <p style={{ fontSize: 11, color: '#ccc', margin: '0 0 6px' }}>tap to view</p>
-        )}
-        {overview && (
-          <div onClick={e => { e.stopPropagation(); onToggleExpand() }}>
-            <p style={{ fontSize: 11, color: '#999', margin: '0 0 4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span style={{ display: 'inline-block', transform: expanded ? 'rotate(90deg)' : 'none', transitionProperty: 'transform', transitionDuration: '0.15s', transitionTimingFunction: 'cubic-bezier(0.2, 0, 0, 1)', fontSize: 9 }}>▶</span>
-              Synopsis
-            </p>
-            {expanded && (
-              <p style={{ fontSize: 11, color: '#666', margin: 0, lineHeight: 1.5, textWrap: 'pretty' }}>{overview}</p>
-            )}
-          </div>
-        )}
-      </div>
-    </motion.div>
-  )
-}
-
 const SECTION_VARIANTS = {
   hidden: { opacity: 0, y: 8 },
   visible: { opacity: 1, y: 0, transition: { type: 'spring', damping: 28, stiffness: 320 } },
@@ -771,7 +697,7 @@ export default function App() {
                   const perforation = isWatched ? '#555' : '#C9C5BA'
 
                   return (
-                    <div key={movie.title} data-movie-id={movie.tmdbId} onClick={() => toggleWatched(movie)} style={{
+                    <div key={movie.title} data-movie-id={movie.tmdbId} onClick={() => setSelectedMovie(movie)} style={{
                       borderRadius: 8, overflow: 'hidden', background: '#fff', cursor: 'pointer',
                       boxShadow: isWatched
                         ? '0 4px 20px rgba(0,0,0,0.10)'
@@ -802,14 +728,24 @@ export default function App() {
                     >
                       <div style={{ display: 'flex', position: 'relative' }}>
                         {/* Stub */}
-                        <div data-stub style={{
+                        <div
+                          data-stub
+                          role="button"
+                          aria-label={isWatched ? 'Mark as unwatched' : 'Mark as watched'}
+                          tabIndex={0}
+                          onClick={e => { e.stopPropagation(); toggleWatched(movie) }}
+                          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); toggleWatched(movie) } }}
+                          style={{
                           width: 76, flexShrink: 0,
                           padding: '14px 6px',
                           background: stubBg,
                           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between',
                           gap: 8,
                           position: 'relative',
-                          transition: 'transform 0.25s cubic-bezier(0.2, 0, 0, 1), background 0.2s ease',
+                          cursor: 'pointer',
+                          transitionProperty: 'transform, background-color',
+                          transitionDuration: '0.25s, 0.2s',
+                          transitionTimingFunction: 'cubic-bezier(0.2, 0, 0, 1)',
                           willChange: 'transform',
                         }}>
                           <p style={{
@@ -858,12 +794,15 @@ export default function App() {
                           transition: 'transform 0.25s cubic-bezier(0.2, 0, 0, 1)',
                           willChange: 'transform',
                         }}>
-                          <div style={{
-                            width: 54, height: 81, borderRadius: 4, overflow: 'hidden',
-                            flexShrink: 0, background: '#F0EDE8',
-                            outline: '1px solid rgba(0,0,0,0.08)',
-                            position: 'relative',
-                          }}>
+                          <motion.div
+                            layoutId={`poster-${movie.tmdbId}`}
+                            transition={{ type: 'spring', damping: 30, stiffness: 320 }}
+                            style={{
+                              width: 54, height: 81, borderRadius: 4, overflow: 'hidden',
+                              flexShrink: 0, background: '#F0EDE8',
+                              outline: '1px solid rgba(0,0,0,0.08)',
+                              position: 'relative',
+                            }}>
                             {posterPath ? (
                               <img src={`${TMDB_IMG}${posterPath}`} alt={movie.title}
                                 style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
@@ -881,7 +820,7 @@ export default function App() {
                                 </div>
                               </div>
                             )}
-                          </div>
+                          </motion.div>
                           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                             <p style={{
                               fontFamily: 'Geist Mono, ui-monospace, monospace',
