@@ -50,6 +50,9 @@ const PHASE_META = {
   6: { label: "Phase 6", saga: "The Multiverse Saga" },
 }
 
+const PHASE_ROMAN = { 1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI' }
+const MCU_INDEX = Object.fromEntries(MCU_MOVIES.map((m, i) => [m.title, i + 1]))
+
 const TMDB_IMG = "https://image.tmdb.org/t/p/w342"
 const TMDB_KEY = import.meta.env.VITE_TMDB_KEY || ""
 const SB_URL = import.meta.env.VITE_SUPABASE_URL || ""
@@ -369,7 +372,7 @@ export default function App() {
                 </div>
                 <span style={{ fontSize: 13, color: '#aaa' }}>{done}/{total}</span>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 14 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
                 {movies.map(movie => {
                   const isWatched = watched[movie.title]
                   const rating = ratings[movie.title]
@@ -378,63 +381,218 @@ export default function App() {
                   const overview = overviews[movie.tmdbId]
                   const isExpanded = expanded[movie.tmdbId]
 
-                  return (
-                    <div key={movie.title} data-movie-id={movie.tmdbId} style={{
-                      borderRadius: 14, overflow: 'hidden', background: '#fff', cursor: 'pointer',
-                      boxShadow: isWatched ? '0 4px 20px rgba(0,0,0,0.10)' : '0 1px 4px rgba(0,0,0,0.06)',
-                      transition: 'box-shadow 0.2s ease, transform 0.15s ease',
-                      outline: isWatched ? '1.5px solid #1a1a1a' : 'none',
-                    }}
-                      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.12)' }}
-                      onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = isWatched ? '0 4px 20px rgba(0,0,0,0.10)' : '0 1px 4px rgba(0,0,0,0.06)' }}
-                    >
-                      <div onClick={() => toggleWatched(movie)} style={{ position: 'relative', aspectRatio: '2/3', background: '#F0EDE8', overflow: 'hidden' }}>
-                        {posterPath ? (
-                          <img src={`${TMDB_IMG}${posterPath}`} alt={movie.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                        ) : (
-                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-                            <span style={{ fontSize: 12, color: '#ccc', textAlign: 'center', lineHeight: 1.4 }}>{movie.title}</span>
-                          </div>
-                        )}
-                        {isWatched && (
-                          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                                <path d="M20 6L9 17L4 12" stroke="#1a1a1a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                              </svg>
-                            </div>
-                          </div>
-                        )}
-                        {isSaving && <div style={{ position: 'absolute', top: 8, right: 8, width: 7, height: 7, borderRadius: '50%', background: '#F59E0B' }} />}
-                      </div>
+                  const ticketNo = MCU_INDEX[movie.title].toString().padStart(3, '0')
+                  const stubBg = isWatched ? '#1a1a1a' : '#FAF7F1'
+                  const stubFg = isWatched ? '#fff' : '#1a1a1a'
+                  const stubMuted = isWatched ? '#888' : '#999'
+                  const stubFaint = isWatched ? '#888' : '#aaa'
+                  const perforation = isWatched ? '#555' : '#C9C5BA'
 
-                      <div style={{ padding: '10px 12px 12px' }}>
-                        <p style={{ fontSize: 12, fontWeight: 500, margin: '0 0 2px', lineHeight: 1.35, color: '#1a1a1a', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                          {movie.title}
-                        </p>
-                        <p style={{ fontSize: 11, color: '#bbb', margin: '0 0 6px' }}>{movie.year}</p>
-                        {isWatched ? (
-                          <div style={{ display: 'flex', gap: 2, marginBottom: 6 }} onClick={e => e.stopPropagation()}>
-                            {[1,2,3,4,5].map(s => (
-                              <span key={s} onClick={e => setRating(movie, s, e)}
-                                style={{ fontSize: 13, cursor: 'pointer', color: rating >= s ? '#1a1a1a' : '#DDD', userSelect: 'none' }}>★</span>
-                            ))}
+                  return (
+                    <div key={movie.title} data-movie-id={movie.tmdbId} onClick={() => toggleWatched(movie)} style={{
+                      borderRadius: 8, overflow: 'hidden', background: '#fff', cursor: 'pointer',
+                      boxShadow: isWatched
+                        ? '0 4px 20px rgba(0,0,0,0.10)'
+                        : '0 1px 2px rgba(0,0,0,0.04), 0 1px 0 rgba(0,0,0,0.02)',
+                      outline: isWatched ? '1.5px solid #1a1a1a' : '1px solid #E5E2DA',
+                      transition: 'box-shadow 0.2s ease, transform 0.18s cubic-bezier(0.2, 0, 0, 1)',
+                    }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.transform = 'translateY(-2px)'
+                        e.currentTarget.style.boxShadow = isWatched
+                          ? '0 14px 32px -10px rgba(0,0,0,0.20), 0 2px 4px rgba(0,0,0,0.06)'
+                          : '0 12px 28px -8px rgba(0,0,0,0.14), 0 1px 2px rgba(0,0,0,0.04)'
+                        const stub = e.currentTarget.querySelector('[data-stub]')
+                        if (stub) stub.style.transform = 'translateX(-3px)'
+                        const body = e.currentTarget.querySelector('[data-body]')
+                        if (body) body.style.transform = 'translateX(2px)'
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.transform = 'none'
+                        e.currentTarget.style.boxShadow = isWatched
+                          ? '0 4px 20px rgba(0,0,0,0.10)'
+                          : '0 1px 2px rgba(0,0,0,0.04), 0 1px 0 rgba(0,0,0,0.02)'
+                        const stub = e.currentTarget.querySelector('[data-stub]')
+                        if (stub) stub.style.transform = 'none'
+                        const body = e.currentTarget.querySelector('[data-body]')
+                        if (body) body.style.transform = 'none'
+                      }}
+                    >
+                      <div style={{ display: 'flex', position: 'relative' }}>
+                        {/* Stub */}
+                        <div data-stub style={{
+                          width: 76, flexShrink: 0,
+                          padding: '14px 6px',
+                          background: stubBg,
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between',
+                          gap: 8,
+                          position: 'relative',
+                          transition: 'transform 0.25s cubic-bezier(0.2, 0, 0, 1), background 0.2s ease',
+                          willChange: 'transform',
+                        }}>
+                          <p style={{
+                            fontFamily: 'Geist Mono, ui-monospace, monospace',
+                            fontSize: 7, letterSpacing: '0.24em',
+                            color: stubFg, margin: 0, fontWeight: 700, textAlign: 'center',
+                          }}>{isWatched ? 'VOID' : 'ADMIT ONE'}</p>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <span style={{
+                              fontFamily: 'Geist Mono, ui-monospace, monospace',
+                              fontSize: 22, fontWeight: 700, color: stubFg,
+                              lineHeight: 1, fontVariantNumeric: 'tabular-nums',
+                            }}>{ticketNo}</span>
+                            <span style={{
+                              fontFamily: 'Geist Mono, ui-monospace, monospace',
+                              fontSize: 7, color: stubMuted,
+                              letterSpacing: '0.18em', marginTop: 3,
+                            }}>MCU</span>
                           </div>
-                        ) : (
-                          <p style={{ fontSize: 11, color: '#ccc', margin: '0 0 6px' }}>tap to mark watched</p>
-                        )}
-                        {overview && (
-                          <div onClick={e => { e.stopPropagation(); toggleExpanded(movie.tmdbId) }}>
-                            <p style={{ fontSize: 11, color: '#999', margin: '0 0 4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-                              <span style={{ display: 'inline-block', transform: isExpanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s', fontSize: 9 }}>▶</span>
-                              Synopsis
-                            </p>
-                            {isExpanded && (
-                              <p style={{ fontSize: 11, color: '#666', margin: 0, lineHeight: 1.5 }}>{overview}</p>
+                          <p style={{
+                            fontFamily: 'Geist Mono, ui-monospace, monospace',
+                            fontSize: 7, letterSpacing: '0.22em',
+                            color: stubFaint, margin: 0, textAlign: 'center',
+                          }}>PH {PHASE_ROMAN[movie.phase]}</p>
+                          {isWatched && (
+                            <div aria-hidden style={{
+                              position: 'absolute', top: 8, right: -7,
+                              width: 14, height: 14, borderRadius: '50%',
+                              background: '#F5F3EE',
+                            }} />
+                          )}
+                          {isSaving && (
+                            <div aria-hidden style={{
+                              position: 'absolute', bottom: 8, right: 6,
+                              width: 6, height: 6, borderRadius: '50%',
+                              background: '#F59E0B',
+                            }} />
+                          )}
+                        </div>
+                        {/* Body */}
+                        <div data-body style={{
+                          flex: 1, display: 'flex',
+                          padding: '12px 14px', gap: 12, alignItems: 'center',
+                          minWidth: 0,
+                          borderLeft: `1px dashed ${perforation}`,
+                          transition: 'transform 0.25s cubic-bezier(0.2, 0, 0, 1)',
+                          willChange: 'transform',
+                        }}>
+                          <div style={{
+                            width: 54, height: 81, borderRadius: 4, overflow: 'hidden',
+                            flexShrink: 0, background: '#F0EDE8',
+                            outline: '1px solid rgba(0,0,0,0.08)',
+                            position: 'relative',
+                          }}>
+                            {posterPath ? (
+                              <img src={`${TMDB_IMG}${posterPath}`} alt={movie.title}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                            ) : (
+                              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 6 }}>
+                                <span style={{ fontSize: 9, color: '#bbb', textAlign: 'center', lineHeight: 1.3 }}>{movie.title}</span>
+                              </div>
+                            )}
+                            {isWatched && (
+                              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                                    <path d="M20 6L9 17L4 12" stroke="#1a1a1a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                </div>
+                              </div>
                             )}
                           </div>
-                        )}
+                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                            <p style={{
+                              fontFamily: 'Geist Mono, ui-monospace, monospace',
+                              fontSize: 8, letterSpacing: '0.22em', color: '#aaa',
+                              margin: 0, textTransform: 'uppercase', fontWeight: 500,
+                            }}>{isWatched ? 'Watched' : 'Now showing'}</p>
+                            <h3 style={{
+                              fontFamily: 'Georgia, serif', fontStyle: 'italic',
+                              fontSize: 16, color: '#1a1a1a',
+                              margin: '3px 0 0', fontWeight: 400, lineHeight: 1.18,
+                              textWrap: 'balance',
+                              overflow: 'hidden',
+                              display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                            }}>{movie.title}</h3>
+                            <div style={{ display: 'flex', gap: 14, marginTop: 8, alignItems: 'flex-end' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                <span style={{
+                                  fontFamily: 'Geist Mono, ui-monospace, monospace',
+                                  fontSize: 7, letterSpacing: '0.22em', color: '#ccc',
+                                  textTransform: 'uppercase',
+                                }}>Year</span>
+                                <span style={{
+                                  fontFamily: 'Geist Mono, ui-monospace, monospace',
+                                  fontSize: 11, color: '#1a1a1a',
+                                  fontVariantNumeric: 'tabular-nums',
+                                }}>{movie.year}</span>
+                              </div>
+                              {isWatched ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                  <span style={{
+                                    fontFamily: 'Geist Mono, ui-monospace, monospace',
+                                    fontSize: 7, letterSpacing: '0.22em', color: '#ccc',
+                                    textTransform: 'uppercase',
+                                  }}>Rating</span>
+                                  <div style={{ display: 'flex' }} onClick={e => e.stopPropagation()}>
+                                    {[1,2,3,4,5].map(s => (
+                                      <span key={s} onClick={e => setRating(movie, s, e)}
+                                        style={{
+                                          fontSize: 12, cursor: 'pointer',
+                                          color: rating >= s ? '#1a1a1a' : '#DDD',
+                                          userSelect: 'none', lineHeight: 1,
+                                          padding: '4px 2px', margin: '-4px -1px',
+                                        }}>★</span>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                  <span style={{
+                                    fontFamily: 'Geist Mono, ui-monospace, monospace',
+                                    fontSize: 7, letterSpacing: '0.22em', color: '#ccc',
+                                    textTransform: 'uppercase',
+                                  }}>Status</span>
+                                  <span style={{
+                                    fontFamily: 'Geist Mono, ui-monospace, monospace',
+                                    fontSize: 11, color: '#1a1a1a',
+                                  }}>OPEN</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
+                      {overview && (
+                        <div onClick={e => { e.stopPropagation(); toggleExpanded(movie.tmdbId) }}
+                          style={{
+                            padding: '10px 14px 12px',
+                            borderTop: '1px dashed #E5E2DA',
+                            display: 'flex', flexDirection: 'column', gap: 6,
+                            cursor: 'pointer',
+                          }}>
+                          <p style={{
+                            fontFamily: 'Geist Mono, ui-monospace, monospace',
+                            fontSize: 9, letterSpacing: '0.22em', color: '#999',
+                            margin: 0, display: 'flex', alignItems: 'center', gap: 6,
+                            textTransform: 'uppercase',
+                          }}>
+                            <span style={{
+                              display: 'inline-block',
+                              transform: isExpanded ? 'rotate(90deg)' : 'none',
+                              transition: 'transform 0.18s cubic-bezier(0.2, 0, 0, 1)',
+                              fontSize: 8,
+                            }}>▶</span>
+                            Synopsis
+                          </p>
+                          {isExpanded && (
+                            <p style={{
+                              fontSize: 12, color: '#666', margin: 0,
+                              lineHeight: 1.55, textWrap: 'pretty',
+                            }}>{overview}</p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )
                 })}
