@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const MCU_MOVIES = [
   { title: "Iron Man", year: 2008, phase: 1, tmdbId: 1726, characters: ["ironman"] },
@@ -54,6 +55,7 @@ const PHASE_ROMAN = { 1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI' }
 const MCU_INDEX = Object.fromEntries(MCU_MOVIES.map((m, i) => [m.title, i + 1]))
 
 const TMDB_IMG = "https://image.tmdb.org/t/p/w342"
+const TMDB_IMG_LG = "https://image.tmdb.org/t/p/w780"
 const TMDB_KEY = import.meta.env.VITE_TMDB_KEY || ""
 const SB_URL = import.meta.env.VITE_SUPABASE_URL || ""
 const SB_KEY = import.meta.env.VITE_SUPABASE_KEY || ""
@@ -64,6 +66,367 @@ const DOOMSDAY = new Date('2026-12-18T00:00:00')
 
 function daysUntil(date) {
   return Math.max(0, Math.ceil((date - new Date()) / 86400000))
+}
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 640)
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth <= 640)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+  return isMobile
+}
+
+function MovieCard({ movie, poster, isWatched, isSaving, rating, expanded, overview, onSelect, onRate, onToggleExpand }) {
+  return (
+    <motion.div
+      data-movie-id={movie.tmdbId}
+      onClick={onSelect}
+      whileHover={{ y: -4 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: 'spring', damping: 24, stiffness: 320 }}
+      style={{
+        borderRadius: 14, overflow: 'hidden', background: '#fff', cursor: 'pointer',
+        boxShadow: isWatched
+          ? '0 1px 2px rgba(0,0,0,0.04), 0 6px 20px -6px rgba(0,0,0,0.18)'
+          : '0 1px 2px rgba(0,0,0,0.04), 0 2px 8px -2px rgba(0,0,0,0.06)',
+        outline: isWatched ? '1.5px solid #1a1a1a' : 'none',
+        transitionProperty: 'box-shadow',
+        transitionDuration: '0.2s',
+      }}
+    >
+      <motion.div
+        layoutId={`poster-${movie.tmdbId}`}
+        transition={{ type: 'spring', damping: 30, stiffness: 320 }}
+        style={{ position: 'relative', aspectRatio: '2/3', background: '#F0EDE8', overflow: 'hidden' }}
+      >
+        {poster ? (
+          <img src={`${TMDB_IMG}${poster}`} alt={movie.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        ) : (
+          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+            <span style={{ fontSize: 12, color: '#ccc', textAlign: 'center', lineHeight: 1.4 }}>{movie.title}</span>
+          </div>
+        )}
+        <div style={{ position: 'absolute', inset: 0, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.08)', pointerEvents: 'none' }} />
+        {isWatched && (
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M20 6L9 17L4 12" stroke="#1a1a1a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          </div>
+        )}
+        {isSaving && <div style={{ position: 'absolute', top: 8, right: 8, width: 7, height: 7, borderRadius: '50%', background: '#F59E0B' }} />}
+      </motion.div>
+
+      <div style={{ padding: '10px 12px 12px' }}>
+        <p style={{ fontSize: 12, fontWeight: 500, margin: '0 0 2px', lineHeight: 1.35, color: '#1a1a1a', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', textWrap: 'pretty' }}>
+          {movie.title}
+        </p>
+        <p style={{ fontSize: 11, color: '#bbb', margin: '0 0 6px', fontVariantNumeric: 'tabular-nums' }}>{movie.year}</p>
+        {isWatched ? (
+          <div style={{ display: 'flex', gap: 2, marginBottom: 6 }} onClick={e => e.stopPropagation()}>
+            {[1,2,3,4,5].map(s => (
+              <span key={s} onClick={e => onRate(s, e)}
+                style={{ fontSize: 13, cursor: 'pointer', color: rating >= s ? '#1a1a1a' : '#DDD', userSelect: 'none', padding: '2px 1px' }}>★</span>
+            ))}
+          </div>
+        ) : (
+          <p style={{ fontSize: 11, color: '#ccc', margin: '0 0 6px' }}>tap to view</p>
+        )}
+        {overview && (
+          <div onClick={e => { e.stopPropagation(); onToggleExpand() }}>
+            <p style={{ fontSize: 11, color: '#999', margin: '0 0 4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ display: 'inline-block', transform: expanded ? 'rotate(90deg)' : 'none', transitionProperty: 'transform', transitionDuration: '0.15s', transitionTimingFunction: 'cubic-bezier(0.2, 0, 0, 1)', fontSize: 9 }}>▶</span>
+              Synopsis
+            </p>
+            {expanded && (
+              <p style={{ fontSize: 11, color: '#666', margin: 0, lineHeight: 1.5, textWrap: 'pretty' }}>{overview}</p>
+            )}
+          </div>
+        )}
+      </div>
+    </motion.div>
+  )
+}
+
+const SECTION_VARIANTS = {
+  hidden: { opacity: 0, y: 8 },
+  visible: { opacity: 1, y: 0, transition: { type: 'spring', damping: 28, stiffness: 320 } },
+}
+
+function ModalSection({ children, style }) {
+  return (
+    <motion.div variants={SECTION_VARIANTS} style={style}>
+      {children}
+    </motion.div>
+  )
+}
+
+function MovieModal({ movie, poster, overview, cast, isWatched, rating, onClose, onToggleWatch, onRate }) {
+  const isMobile = useIsMobile()
+  const meta = PHASE_META[movie.phase]
+  const fallbackCharacters = movie.characters
+    .map(c => CHARACTER_NAMES[c])
+    .filter(Boolean)
+    .map(name => ({ name, character: '' }))
+  const displayCast = cast?.length ? cast : fallbackCharacters
+
+  useEffect(() => {
+    const scrollY = window.scrollY
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${scrollY}px`
+    document.body.style.left = '0'
+    document.body.style.right = '0'
+    return () => {
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.left = ''
+      document.body.style.right = ''
+      window.scrollTo(0, scrollY)
+    }
+  }, [])
+
+  useEffect(() => {
+    const handler = e => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [onClose])
+
+  const sheetStyle = isMobile ? {
+    position: 'fixed', bottom: 0, left: 0, right: 0,
+    background: '#F5F3EE',
+    borderRadius: '28px 28px 0 0',
+    maxHeight: '92vh',
+    overflow: 'auto',
+    boxShadow: '0 -1px 0 rgba(0,0,0,0.04), 0 -24px 48px -12px rgba(0,0,0,0.25)',
+    zIndex: 101,
+  } : {
+    position: 'fixed', top: '50%', left: '50%',
+    width: 'min(440px, 92vw)',
+    maxHeight: '88vh',
+    overflow: 'auto',
+    background: '#F5F3EE',
+    borderRadius: 28,
+    boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 32px 64px -12px rgba(0,0,0,0.28), 0 0 0 0.5px rgba(0,0,0,0.06)',
+    zIndex: 101,
+  }
+
+  const sheetMotion = isMobile ? {
+    initial: { y: '100%' },
+    animate: { y: 0 },
+    exit: { y: '100%' },
+    transition: { type: 'spring', damping: 34, stiffness: 320 },
+  } : {
+    initial: { opacity: 0, scale: 0.96, x: '-50%', y: '-50%' },
+    animate: { opacity: 1, scale: 1, x: '-50%', y: '-50%' },
+    exit: { opacity: 0, scale: 0.96, x: '-50%', y: '-50%' },
+    transition: { type: 'spring', damping: 30, stiffness: 360 },
+  }
+
+  return (
+    <>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
+        onClick={onClose}
+        style={{
+          position: 'fixed', inset: 0,
+          background: 'rgba(20, 18, 14, 0.5)',
+          backdropFilter: 'blur(6px)',
+          WebkitBackdropFilter: 'blur(6px)',
+          zIndex: 100,
+          willChange: 'opacity',
+        }}
+      />
+
+      <motion.div {...sheetMotion} style={sheetStyle}>
+        {isMobile && (
+          <div style={{ position: 'sticky', top: 0, zIndex: 2, background: 'linear-gradient(180deg, #F5F3EE 60%, rgba(245,243,238,0))', display: 'flex', justifyContent: 'center', padding: '10px 0 6px' }}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(0,0,0,0.18)' }} />
+          </div>
+        )}
+
+        <div style={{ position: 'relative' }}>
+          <motion.div
+            layoutId={`poster-${movie.tmdbId}`}
+            transition={{ type: 'spring', damping: 30, stiffness: 320 }}
+            style={{
+              width: '100%',
+              aspectRatio: '2/3',
+              maxHeight: isMobile ? 380 : 420,
+              background: '#F0EDE8',
+              overflow: 'hidden',
+              position: 'relative',
+            }}
+          >
+            {poster ? (
+              <img
+                src={`${TMDB_IMG_LG}${poster}`}
+                alt={movie.title}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              />
+            ) : (
+              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: 13, color: '#ccc' }}>{movie.title}</span>
+              </div>
+            )}
+            <div style={{ position: 'absolute', inset: 0, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.1)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0) 28%, rgba(0,0,0,0) 70%, rgba(0,0,0,0.45))', pointerEvents: 'none' }} />
+          </motion.div>
+
+          <motion.button
+            onClick={onClose}
+            aria-label="Close"
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.85 }}
+            whileTap={{ scale: 0.96 }}
+            transition={{ type: 'spring', damping: 22, stiffness: 360, delay: 0.18 }}
+            style={{
+              position: 'absolute', top: isMobile ? 22 : 16, right: 16,
+              width: 36, height: 36, borderRadius: '50%',
+              background: 'rgba(0,0,0,0.45)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#fff', cursor: 'pointer',
+              transitionProperty: 'background-color',
+              transitionDuration: '0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.65)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.45)'}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+            </svg>
+            <span style={{ position: 'absolute', inset: -6 }} aria-hidden="true" />
+          </motion.button>
+        </div>
+
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={{ visible: { transition: { staggerChildren: 0.06, delayChildren: 0.12 } } }}
+          style={{ padding: '22px 24px 32px' }}
+        >
+          <ModalSection>
+            <p style={{ fontSize: 11, color: '#9c9486', margin: 0, letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 500 }}>
+              {meta.label} <span style={{ color: '#ccc', margin: '0 6px' }}>·</span> {meta.saga}
+            </p>
+          </ModalSection>
+
+          <ModalSection style={{ marginTop: 10 }}>
+            <h2 style={{ fontSize: 30, fontWeight: 400, lineHeight: 1.15, color: '#1a1a1a', margin: '0 0 6px', fontFamily: 'Georgia, serif', textWrap: 'balance' }}>
+              <em>{movie.title}</em>
+            </h2>
+            <p style={{ fontSize: 14, color: '#888', margin: 0, fontVariantNumeric: 'tabular-nums' }}>{movie.year}</p>
+          </ModalSection>
+
+          {displayCast.length > 0 && (
+            <ModalSection style={{ marginTop: 24 }}>
+              <p style={{ fontSize: 11, color: '#9c9486', margin: '0 0 10px', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 500 }}>
+                Cast
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {displayCast.slice(0, 8).map((p, i) => (
+                  <div key={`${p.name}-${i}`} style={{
+                    background: '#FFFFFF',
+                    color: '#444',
+                    padding: '7px 12px',
+                    borderRadius: 100,
+                    fontSize: 12,
+                    fontWeight: 500,
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 0 0 0.5px rgba(0,0,0,0.06)',
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                  }}>
+                    <span>{p.name}</span>
+                    {p.character && (
+                      <span style={{ color: '#aaa', fontSize: 11 }}>· {p.character.split('/')[0].trim()}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </ModalSection>
+          )}
+
+          {overview && (
+            <ModalSection style={{ marginTop: 24 }}>
+              <p style={{ fontSize: 11, color: '#9c9486', margin: '0 0 8px', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 500 }}>
+                Synopsis
+              </p>
+              <p style={{ fontSize: 14, color: '#444', lineHeight: 1.6, margin: 0, textWrap: 'pretty' }}>
+                {overview}
+              </p>
+            </ModalSection>
+          )}
+
+          <ModalSection style={{ marginTop: 24 }}>
+            <p style={{ fontSize: 11, color: '#9c9486', margin: '0 0 8px', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 500 }}>
+              Your rating
+            </p>
+            <div style={{ display: 'flex', gap: 2, marginLeft: -4 }}>
+              {[1,2,3,4,5].map(s => (
+                <button
+                  key={s}
+                  onClick={e => onRate(s, e)}
+                  aria-label={`Rate ${s} star${s === 1 ? '' : 's'}`}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    padding: '4px 6px', fontSize: 24, lineHeight: 1,
+                    color: rating >= s ? '#1a1a1a' : '#D5D2CA',
+                    transitionProperty: 'color, transform',
+                    transitionDuration: '0.15s',
+                    transitionTimingFunction: 'cubic-bezier(0.2, 0, 0, 1)',
+                  }}
+                >★</button>
+              ))}
+            </div>
+          </ModalSection>
+
+          <ModalSection style={{ marginTop: 28 }}>
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={() => onToggleWatch(movie)}
+              style={{
+                width: '100%',
+                padding: '14px 16px',
+                background: isWatched ? '#fff' : '#1a1a1a',
+                color: isWatched ? '#1a1a1a' : '#fff',
+                border: 'none',
+                boxShadow: isWatched
+                  ? 'inset 0 0 0 1px #E5E2DA, 0 1px 2px rgba(0,0,0,0.03)'
+                  : '0 1px 2px rgba(0,0,0,0.06), 0 8px 20px -8px rgba(26,26,26,0.45)',
+                borderRadius: 14,
+                fontSize: 15, fontWeight: 500,
+                cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                fontFamily: 'inherit',
+                transitionProperty: 'background-color, color, box-shadow',
+                transitionDuration: '0.18s',
+                transitionTimingFunction: 'cubic-bezier(0.2, 0, 0, 1)',
+              }}
+            >
+              {isWatched ? (
+                <>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M20 6L9 17L4 12" stroke="#1a1a1a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <span>Watched</span>
+                </>
+              ) : (
+                <span>Mark as watched</span>
+              )}
+            </motion.button>
+          </ModalSection>
+        </motion.div>
+      </motion.div>
+    </>
+  )
 }
 
 function FloatingCountdown({ filmsLeft, totalFilms, watchedCount, nextUnwatched }) {
@@ -104,7 +467,7 @@ function FloatingCountdown({ filmsLeft, totalFilms, watchedCount, nextUnwatched 
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-              <span style={{ fontFamily: 'Geist Mono, ui-monospace, monospace', fontSize: 24, fontWeight: 600, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1 }}>{daysRemaining}</span>
+              <span style={{ fontFamily: 'Geist Mono, ui-monospace, monospace', fontSize: 24, fontWeight: 600, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{daysRemaining}</span>
               <span style={{ fontSize: 11, color: '#9d9d9d', letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 500 }}>days</span>
             </div>
             <span style={{ fontSize: 10, color: '#6a6a6a', letterSpacing: '0.04em' }}>until Avengers: Doomsday</span>
@@ -116,10 +479,10 @@ function FloatingCountdown({ filmsLeft, totalFilms, watchedCount, nextUnwatched 
         <div style={{ display: 'flex', alignItems: 'center', padding: '8px 6px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-              <span style={{ fontFamily: 'Geist Mono, ui-monospace, monospace', fontSize: 24, fontWeight: 600, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1 }}>{filmsLeft}</span>
+              <span style={{ fontFamily: 'Geist Mono, ui-monospace, monospace', fontSize: 24, fontWeight: 600, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{filmsLeft}</span>
               <span style={{ fontSize: 11, color: '#9d9d9d', letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 500 }}>films left</span>
             </div>
-            <span style={{ fontSize: 10, color: paceTone, letterSpacing: '0.04em' }}>~1 every {daysPerFilm.toFixed(1)} days · {paceLabel}</span>
+            <span style={{ fontSize: 10, color: paceTone, letterSpacing: '0.04em', fontVariantNumeric: 'tabular-nums' }}>~1 every {daysPerFilm.toFixed(1)} days · {paceLabel}</span>
           </div>
         </div>
 
@@ -163,6 +526,8 @@ export default function App() {
   const [posters, setPosters] = useState({})
   const [expanded, setExpanded] = useState({})
   const [overviews, setOverviews] = useState({})
+  const [selectedMovie, setSelectedMovie] = useState(null)
+  const [credits, setCredits] = useState({})
 
   // Handle auth state
   useEffect(() => {
@@ -217,6 +582,20 @@ export default function App() {
     fetchAll()
   }, [])
 
+  // Lazily fetch cast credits when modal opens
+  useEffect(() => {
+    if (!selectedMovie || !TMDB_KEY) return
+    if (credits[selectedMovie.tmdbId]) return
+    const id = selectedMovie.tmdbId
+    fetch(`https://api.themoviedb.org/3/movie/${id}/credits?api_key=${TMDB_KEY}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data) return
+        setCredits(prev => ({ ...prev, [id]: (data.cast ?? []).slice(0, 6) }))
+      })
+      .catch(() => {})
+  }, [selectedMovie])
+
   async function signInWithGoogle() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -244,7 +623,7 @@ export default function App() {
   }
 
   async function setRating(movie, val, e) {
-    e.stopPropagation()
+    if (e) e.stopPropagation()
     if (!user) return
     const key = movie.title
     const r = ratings[key] === val ? null : val
@@ -287,7 +666,7 @@ export default function App() {
           <p style={{ fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#999', marginBottom: 12 }}>
             Marvel Cinematic Universe
           </p>
-          <h1 style={{ fontSize: 'clamp(2rem, 6vw, 2.8rem)', fontWeight: 400, lineHeight: 1.15, color: '#1a1a1a', margin: '0 0 1rem', fontFamily: 'Georgia, serif' }}>
+          <h1 style={{ fontSize: 'clamp(2rem, 6vw, 2.8rem)', fontWeight: 400, lineHeight: 1.15, color: '#1a1a1a', margin: '0 0 1rem', fontFamily: 'Georgia, serif', textWrap: 'balance' }}>
             <em>Watch</em> every film<br />before Doomsday.
           </h1>
           <p style={{ fontSize: 14, color: '#888', margin: 0 }}>
@@ -331,19 +710,19 @@ export default function App() {
               </button>
             </div>
           </div>
-          <h1 style={{ fontSize: 'clamp(2.2rem, 6vw, 3.2rem)', fontWeight: 400, lineHeight: 1.15, color: '#1a1a1a', margin: '0 0 1.5rem', fontFamily: 'Georgia, serif' }}>
+          <h1 style={{ fontSize: 'clamp(2.2rem, 6vw, 3.2rem)', fontWeight: 400, lineHeight: 1.15, color: '#1a1a1a', margin: '0 0 1.5rem', fontFamily: 'Georgia, serif', textWrap: 'balance' }}>
             <em>Watch</em> every film<br />before Doomsday.
           </h1>
-          <span style={{ fontSize: 14, color: '#666' }}>
+          <span style={{ fontSize: 14, color: '#666', fontVariantNumeric: 'tabular-nums' }}>
             {watchedCount} watched — {MCU_MOVIES.length - watchedCount} remaining — {MCU_MOVIES.length} total
           </span>
         </div>
 
         <div style={{ marginBottom: '3rem' }}>
           <div style={{ height: 3, background: '#E5E2DA', borderRadius: 2, overflow: 'hidden', marginBottom: 8 }}>
-            <div style={{ height: '100%', width: `${pct}%`, background: '#1a1a1a', borderRadius: 2, transition: 'width 0.6s ease' }} />
+            <div style={{ height: '100%', width: `${pct}%`, background: '#1a1a1a', borderRadius: 2, transitionProperty: 'width', transitionDuration: '0.6s', transitionTimingFunction: 'cubic-bezier(0.2, 0, 0, 1)' }} />
           </div>
-          <p style={{ fontSize: 12, color: '#aaa', margin: 0 }}>{pct}% complete</p>
+          <p style={{ fontSize: 12, color: '#aaa', margin: 0, fontVariantNumeric: 'tabular-nums' }}>{pct}% complete</p>
         </div>
 
         <div style={{ display: 'flex', gap: 8, marginBottom: '3rem' }}>
@@ -353,7 +732,10 @@ export default function App() {
               background: filter === f ? '#1a1a1a' : 'transparent',
               color: filter === f ? '#fff' : '#888',
               border: `1px solid ${filter === f ? '#1a1a1a' : '#D5D2CA'}`,
-              borderRadius: 100, cursor: 'pointer', transition: 'all 0.15s',
+              borderRadius: 100, cursor: 'pointer',
+              transitionProperty: 'background-color, color, border-color',
+              transitionDuration: '0.15s',
+              transitionTimingFunction: 'cubic-bezier(0.2, 0, 0, 1)',
               fontFamily: 'Geist, system-ui, sans-serif',
             }}>
               {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -370,7 +752,7 @@ export default function App() {
                   <span style={{ fontSize: 18, fontWeight: 400, color: '#1a1a1a', fontStyle: 'italic', fontFamily: 'Georgia, serif' }}>{meta.label}</span>
                   <span style={{ fontSize: 13, color: '#aaa', marginLeft: 10 }}>{meta.saga}</span>
                 </div>
-                <span style={{ fontSize: 13, color: '#aaa' }}>{done}/{total}</span>
+                <span style={{ fontSize: 13, color: '#aaa', fontVariantNumeric: 'tabular-nums' }}>{done}/{total}</span>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
                 {movies.map(movie => {
@@ -605,12 +987,30 @@ export default function App() {
           Poster images via The Movie Database (TMDB)
         </p>
       </div>
+
       <FloatingCountdown
         filmsLeft={MCU_MOVIES.length - watchedCount}
         totalFilms={MCU_MOVIES.length}
         watchedCount={watchedCount}
         nextUnwatched={nextUnwatched}
       />
+
+      <AnimatePresence>
+        {selectedMovie && (
+          <MovieModal
+            key={selectedMovie.tmdbId}
+            movie={selectedMovie}
+            poster={posters[selectedMovie.tmdbId]}
+            overview={overviews[selectedMovie.tmdbId]}
+            cast={credits[selectedMovie.tmdbId] ?? []}
+            isWatched={!!watched[selectedMovie.title]}
+            rating={ratings[selectedMovie.title]}
+            onClose={() => setSelectedMovie(null)}
+            onToggleWatch={toggleWatched}
+            onRate={(val, e) => setRating(selectedMovie, val, e)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }
