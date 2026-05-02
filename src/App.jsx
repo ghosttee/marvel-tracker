@@ -450,7 +450,6 @@ export default function App() {
   const [saving, setSaving] = useState(null)
   const [filter, setFilter] = useState("all")
   const [posters, setPosters] = useState({})
-  const [expanded, setExpanded] = useState({})
   const [overviews, setOverviews] = useState({})
   const [selectedMovie, setSelectedMovie] = useState(null)
   const [credits, setCredits] = useState({})
@@ -557,10 +556,6 @@ export default function App() {
     await supabase.from('marvel_tracker').upsert({
       id: key, watched: watched[key] || false, rating: r, user_id: user.id
     })
-  }
-
-  function toggleExpanded(tmdbId) {
-    setExpanded(p => ({ ...p, [tmdbId]: !p[tmdbId] }))
   }
 
   const filtered = MCU_MOVIES.filter(m =>
@@ -686,8 +681,6 @@ export default function App() {
                   const rating = ratings[movie.title]
                   const isSaving = saving === movie.title
                   const posterPath = posters[movie.tmdbId]
-                  const overview = overviews[movie.tmdbId]
-                  const isExpanded = expanded[movie.tmdbId]
 
                   const ticketNo = MCU_INDEX[movie.title].toString().padStart(3, '0')
                   const stubBg = isWatched ? '#1a1a1a' : '#FAF7F1'
@@ -884,36 +877,6 @@ export default function App() {
                           </div>
                         </div>
                       </div>
-                      {overview && (
-                        <div onClick={e => { e.stopPropagation(); toggleExpanded(movie.tmdbId) }}
-                          style={{
-                            padding: '10px 14px 12px',
-                            borderTop: '1px dashed #E5E2DA',
-                            display: 'flex', flexDirection: 'column', gap: 6,
-                            cursor: 'pointer',
-                          }}>
-                          <p style={{
-                            fontFamily: 'Geist Mono, ui-monospace, monospace',
-                            fontSize: 9, letterSpacing: '0.22em', color: '#999',
-                            margin: 0, display: 'flex', alignItems: 'center', gap: 6,
-                            textTransform: 'uppercase',
-                          }}>
-                            <span style={{
-                              display: 'inline-block',
-                              transform: isExpanded ? 'rotate(90deg)' : 'none',
-                              transition: 'transform 0.18s cubic-bezier(0.2, 0, 0, 1)',
-                              fontSize: 8,
-                            }}>▶</span>
-                            Synopsis
-                          </p>
-                          {isExpanded && (
-                            <p style={{
-                              fontSize: 12, color: '#666', margin: 0,
-                              lineHeight: 1.55, textWrap: 'pretty',
-                            }}>{overview}</p>
-                          )}
-                        </div>
-                      )}
                     </div>
                   )
                 })}
