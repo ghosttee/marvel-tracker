@@ -101,18 +101,9 @@ function MovieModal({ movie, poster, overview, cast, isWatched, rating, onClose,
   const displayCast = cast?.length ? cast : fallbackCharacters
 
   useEffect(() => {
-    const scrollY = window.scrollY
-    document.body.style.position = 'fixed'
-    document.body.style.top = `-${scrollY}px`
-    document.body.style.left = '0'
-    document.body.style.right = '0'
-    return () => {
-      document.body.style.position = ''
-      document.body.style.top = ''
-      document.body.style.left = ''
-      document.body.style.right = ''
-      window.scrollTo(0, scrollY)
-    }
+    const prev = document.documentElement.style.overflow
+    document.documentElement.style.overflow = 'hidden'
+    return () => { document.documentElement.style.overflow = prev }
   }, [])
 
   useEffect(() => {
@@ -178,9 +169,7 @@ function MovieModal({ movie, poster, overview, cast, isWatched, rating, onClose,
         )}
 
         <div style={{ position: 'relative' }}>
-          <motion.div
-            layoutId={`poster-${movie.tmdbId}`}
-            transition={{ type: 'spring', damping: 30, stiffness: 320 }}
+          <div
             style={{
               width: '100%',
               aspectRatio: '2/3',
@@ -203,7 +192,7 @@ function MovieModal({ movie, poster, overview, cast, isWatched, rating, onClose,
             )}
             <div style={{ position: 'absolute', inset: 0, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.1)', pointerEvents: 'none' }} />
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0) 28%, rgba(0,0,0,0) 70%, rgba(0,0,0,0.45))', pointerEvents: 'none' }} />
-          </motion.div>
+          </div>
 
           <motion.button
             onClick={onClose}
@@ -787,9 +776,7 @@ export default function App() {
                           transition: 'transform 0.25s cubic-bezier(0.2, 0, 0, 1)',
                           willChange: 'transform',
                         }}>
-                          <motion.div
-                            layoutId={`poster-${movie.tmdbId}`}
-                            transition={{ type: 'spring', damping: 30, stiffness: 320 }}
+                          <div
                             style={{
                               width: 54, height: 81, borderRadius: 4, overflow: 'hidden',
                               flexShrink: 0, background: '#F0EDE8',
@@ -813,7 +800,7 @@ export default function App() {
                                 </div>
                               </div>
                             )}
-                          </motion.div>
+                          </div>
                           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                             <p style={{
                               fontFamily: 'Geist Mono, ui-monospace, monospace',
