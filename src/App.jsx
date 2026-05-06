@@ -54,6 +54,15 @@ const PHASE_META = {
 const PHASE_ROMAN = { 1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI' }
 const MCU_INDEX = Object.fromEntries(MCU_MOVIES.map((m, i) => [m.title, i + 1]))
 
+const MCU_CHRONOLOGICAL_IDS = [
+  1771, 299537, 1726, 1724, 10138, 10195, 24428, 68721, 76338,
+  100402, 118340, 283995, 99861, 102899, 271110, 284052, 315635,
+  284054, 284053, 363088, 299536, 299534, 429617, 497698, 566525,
+  524434, 634649, 453395, 616037, 505642, 640146, 447365, 609681,
+  822119, 986056, 617126, 969681,
+]
+const CHRONO_POSITION = Object.fromEntries(MCU_CHRONOLOGICAL_IDS.map((id, i) => [id, i]))
+
 const TMDB_IMG = "https://image.tmdb.org/t/p/w342"
 const TMDB_IMG_LG = "https://image.tmdb.org/t/p/w780"
 const TMDB_KEY = import.meta.env.VITE_TMDB_KEY || ""
@@ -239,7 +248,20 @@ function MovieModal({ movie, poster, overview, cast, isWatched, rating, onClose,
             <h2 style={{ fontSize: 30, fontWeight: 400, lineHeight: 1.15, color: '#1a1a1a', margin: '0 0 6px', fontFamily: 'Georgia, serif', textWrap: 'balance' }}>
               <em>{movie.title}</em>
             </h2>
-            <p style={{ fontSize: 14, color: '#888', margin: 0, fontVariantNumeric: 'tabular-nums' }}>{movie.year}</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <p style={{ fontSize: 14, color: '#888', margin: 0, fontVariantNumeric: 'tabular-nums' }}>{movie.year}</p>
+              {movie.tmdbId === 617126 && (
+                <span style={{
+                  padding: '3px 8px',
+                  fontFamily: 'Geist Mono, ui-monospace, monospace',
+                  fontSize: 10, letterSpacing: '0.16em',
+                  color: '#1a1a1a', background: '#F0E8D6',
+                  border: '0.5px solid #D6CDB6',
+                  borderRadius: 4, textTransform: 'uppercase',
+                  fontWeight: 600, lineHeight: 1.2,
+                }}>Earth-828 · 1965</span>
+              )}
+            </div>
           </ModalSection>
 
           {displayCast.length > 0 && (
@@ -438,8 +460,10 @@ export default function App() {
   const [ratings, setRatings] = useState({})
   const [saving, setSaving] = useState(null)
   const [filter, setFilter] = useState("all")
+  const [sortMode, setSortMode] = useState("chronological")
   const [posters, setPosters] = useState({})
   const [overviews, setOverviews] = useState({})
+  const [releaseDates, setReleaseDates] = useState({})
   const [selectedMovie, setSelectedMovie] = useState(null)
   const [credits, setCredits] = useState({})
 
@@ -478,7 +502,7 @@ export default function App() {
     const fetchAll = async () => {
       for (let i = 0; i < MCU_MOVIES.length; i += 6) {
         const batch = MCU_MOVIES.slice(i, i + 6)
-        const results = {}, overviewResults = {}
+        const results = {}, overviewResults = {}, dateResults = {}
         await Promise.all(batch.map(async m => {
           try {
             const res = await fetch(`https://api.themoviedb.org/3/movie/${m.tmdbId}?api_key=${TMDB_KEY}`)
@@ -486,11 +510,13 @@ export default function App() {
               const d = await res.json()
               if (d.poster_path) results[m.tmdbId] = d.poster_path
               if (d.overview) overviewResults[m.tmdbId] = d.overview
+              if (d.release_date) dateResults[m.tmdbId] = d.release_date
             }
           } catch (e) {}
         }))
         setPosters(prev => ({ ...prev, ...results }))
         setOverviews(prev => ({ ...prev, ...overviewResults }))
+        setReleaseDates(prev => ({ ...prev, ...dateResults }))
       }
     }
     fetchAll()
@@ -552,14 +578,18 @@ export default function App() {
   )
   const watchedCount = MCU_MOVIES.filter(m => watched[m.title]).length
   const pct = Math.round((watchedCount / MCU_MOVIES.length) * 100)
-  const nextUnwatched = MCU_MOVIES.find(m => !watched[m.title])
 
-  const byPhase = [1,2,3,4,5,6].map(ph => ({
-    phase: ph,
-    movies: filtered.filter(m => m.phase === ph),
-    total: MCU_MOVIES.filter(m => m.phase === ph).length,
-    done: MCU_MOVIES.filter(m => m.phase === ph && watched[m.title]).length,
-  })).filter(p => p.movies.length > 0)
+  const sortedMovies = [...filtered].sort((a, b) => {
+    if (sortMode === 'chronological') {
+      return (CHRONO_POSITION[a.tmdbId] ?? 999) - (CHRONO_POSITION[b.tmdbId] ?? 999)
+    }
+    const da = releaseDates[a.tmdbId] || `${a.year}-01-01`
+    const db = releaseDates[b.tmdbId] || `${b.year}-01-01`
+    return da.localeCompare(db)
+  })
+
+  const nextUnwatched = sortedMovies.find(m => !watched[m.title])
+    || MCU_MOVIES.find(m => !watched[m.title])
 
   const s = { fontFamily: 'Geist, system-ui, sans-serif' }
 
@@ -635,7 +665,7 @@ export default function App() {
           <p style={{ fontSize: 12, color: '#aaa', margin: 0, fontVariantNumeric: 'tabular-nums' }}>{pct}% complete</p>
         </div>
 
-        <div style={{ display: 'flex', gap: 8, marginBottom: '3rem' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: '1rem' }}>
           {['all', 'watched', 'unwatched'].map(f => (
             <button key={f} onClick={() => setFilter(f)} style={{
               padding: '7px 18px', fontSize: 13,
@@ -653,19 +683,44 @@ export default function App() {
           ))}
         </div>
 
-        {byPhase.map(({ phase, movies, total, done }) => {
-          const meta = PHASE_META[phase]
-          return (
-            <div key={phase} style={{ marginBottom: '3.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-                <div>
-                  <span style={{ fontSize: 18, fontWeight: 400, color: '#1a1a1a', fontStyle: 'italic', fontFamily: 'Georgia, serif' }}>{meta.label}</span>
-                  <span style={{ fontSize: 13, color: '#aaa', marginLeft: 10 }}>{meta.saga}</span>
-                </div>
-                <span style={{ fontSize: 13, color: '#aaa', fontVariantNumeric: 'tabular-nums' }}>{done}/{total}</span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
-                {movies.map(movie => {
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '2.5rem', flexWrap: 'wrap' }}>
+          <span style={{
+            fontFamily: 'Geist Mono, ui-monospace, monospace',
+            fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#aaa',
+          }}>Sort</span>
+          <div style={{
+            display: 'inline-flex', padding: 3, gap: 2,
+            background: '#EBE7DD', borderRadius: 100,
+          }}>
+            {[
+              { id: 'chronological', label: 'Chronological' },
+              { id: 'release', label: 'Release Order' },
+            ].map(({ id, label }) => {
+              const active = sortMode === id
+              return (
+                <button key={id} onClick={() => setSortMode(id)} style={{
+                  padding: '6px 14px', fontSize: 12,
+                  background: active ? '#fff' : 'transparent',
+                  color: active ? '#1a1a1a' : '#888',
+                  border: 'none', borderRadius: 100,
+                  cursor: 'pointer',
+                  fontWeight: active ? 500 : 400,
+                  fontFamily: 'Geist, system-ui, sans-serif',
+                  boxShadow: active ? '0 1px 2px rgba(0,0,0,0.06), 0 0 0 0.5px rgba(0,0,0,0.04)' : 'none',
+                  transitionProperty: 'background-color, color, box-shadow',
+                  transitionDuration: '0.18s',
+                  transitionTimingFunction: 'cubic-bezier(0.2, 0, 0, 1)',
+                }}>
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div style={{ marginBottom: '3.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+            {sortedMovies.map(movie => {
                   const isWatched = watched[movie.title]
                   const rating = ratings[movie.title]
                   const isSaving = saving === movie.title
@@ -807,6 +862,19 @@ export default function App() {
                               fontSize: 8, letterSpacing: '0.22em', color: '#aaa',
                               margin: 0, textTransform: 'uppercase', fontWeight: 500,
                             }}>{isWatched ? 'Watched' : 'Now showing'}</p>
+                            {movie.tmdbId === 617126 && (
+                              <span style={{
+                                alignSelf: 'flex-start',
+                                marginTop: 4,
+                                padding: '2px 6px',
+                                fontFamily: 'Geist Mono, ui-monospace, monospace',
+                                fontSize: 8, letterSpacing: '0.16em',
+                                color: '#1a1a1a', background: '#F0E8D6',
+                                border: '0.5px solid #D6CDB6',
+                                borderRadius: 3, textTransform: 'uppercase',
+                                fontWeight: 600, lineHeight: 1.2,
+                              }}>Earth-828 · 1965</span>
+                            )}
                             <h3 style={{
                               fontFamily: 'Georgia, serif', fontStyle: 'italic',
                               fontSize: 16, color: '#1a1a1a',
@@ -866,11 +934,15 @@ export default function App() {
                       </div>
                     </div>
                   )
-                })}
-              </div>
-            </div>
-          )
-        })}
+            })}
+          </div>
+        </div>
+
+        {sortedMovies.length === 0 && (
+          <p style={{ textAlign: 'center', color: '#aaa', fontSize: 13, marginBottom: '3rem' }}>
+            No films match the current filter.
+          </p>
+        )}
 
         <p style={{ fontSize: 12, color: '#ccc', textAlign: 'center', marginTop: '1rem', marginBottom: '6rem' }}>
           Poster images via The Movie Database (TMDB)
