@@ -54,6 +54,16 @@ const PHASE_META = {
 const PHASE_ROMAN = { 1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI' }
 const MCU_INDEX = Object.fromEntries(MCU_MOVIES.map((m, i) => [m.title, i + 1]))
 
+const CHARACTER_NAMES = {
+  ironman: 'Iron Man',
+  thor: 'Thor',
+  cap: 'Captain America',
+  spiderman: 'Spider-Man',
+  strange: 'Doctor Strange',
+  guardians: 'Guardians of the Galaxy',
+  panther: 'Black Panther',
+}
+
 const MCU_CHRONOLOGICAL_IDS = [
   1771, 299537, 1726, 1724, 10138, 10195, 24428, 68721, 76338,
   100402, 118340, 283995, 99861, 102899, 271110, 284052, 315635,
@@ -368,6 +378,7 @@ function MovieModal({ movie, poster, overview, cast, isWatched, rating, onClose,
 
 function FloatingCountdown({ filmsLeft, totalFilms, watchedCount, nextUnwatched }) {
   const daysRemaining = daysUntil(DOOMSDAY)
+  const isMobile = useIsMobile()
   if (filmsLeft === 0 || daysRemaining === 0) return null
 
   const daysPerFilm = daysRemaining / filmsLeft
@@ -381,69 +392,85 @@ function FloatingCountdown({ filmsLeft, totalFilms, watchedCount, nextUnwatched 
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 
+  const numFontSize = isMobile ? 18 : 24
+  const labelFontSize = isMobile ? 10 : 11
+
   return (
-    <div style={{ position: 'fixed', left: 0, right: 0, bottom: 32, display: 'flex', justifyContent: 'center', pointerEvents: 'none', zIndex: 50, fontFamily: 'Geist, system-ui, sans-serif' }}>
+    <div style={{ position: 'fixed', left: 0, right: 0, bottom: isMobile ? 16 : 32, display: 'flex', justifyContent: 'center', pointerEvents: 'none', zIndex: 50, fontFamily: 'Geist, system-ui, sans-serif', padding: '0 12px' }}>
       <div style={{
         pointerEvents: 'auto',
         display: 'flex', alignItems: 'stretch',
+        maxWidth: '100%',
         background: 'linear-gradient(180deg, #161618 0%, #0a0a0c 100%)',
         border: '1px solid rgba(255,255,255,0.08)',
         borderRadius: 100,
-        padding: '10px 10px 10px 24px',
-        gap: 18,
+        padding: isMobile ? '6px 6px 6px 16px' : '10px 10px 10px 24px',
+        gap: isMobile ? 10 : 18,
         boxShadow: '0 24px 48px -12px rgba(0,0,0,0.4), 0 0 0 1px rgba(229, 36, 36, 0.06), 0 0 60px -10px rgba(229, 36, 36, 0.25)',
       }}>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '8px 0' }}>
-          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'radial-gradient(circle, rgba(229,36,36,0.18) 0%, rgba(229,36,36,0) 70%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="13" r="8" stroke="#E52424" strokeWidth="1.6"/>
-              <path d="M12 9v4l2.5 1.5" stroke="#E52424" strokeWidth="1.6" strokeLinecap="round"/>
-              <path d="M9 3h6" stroke="#E52424" strokeWidth="1.6" strokeLinecap="round"/>
-            </svg>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 0 : 14, padding: isMobile ? '6px 0' : '8px 0' }}>
+          {!isMobile && (
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'radial-gradient(circle, rgba(229,36,36,0.18) 0%, rgba(229,36,36,0) 70%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="13" r="8" stroke="#E52424" strokeWidth="1.6"/>
+                <path d="M12 9v4l2.5 1.5" stroke="#E52424" strokeWidth="1.6" strokeLinecap="round"/>
+                <path d="M9 3h6" stroke="#E52424" strokeWidth="1.6" strokeLinecap="round"/>
+              </svg>
+            </div>
+          )}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-              <span style={{ fontFamily: 'Geist Mono, ui-monospace, monospace', fontSize: 24, fontWeight: 600, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{daysRemaining}</span>
-              <span style={{ fontSize: 11, color: '#9d9d9d', letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 500 }}>days</span>
+              <span style={{ fontFamily: 'Geist Mono, ui-monospace, monospace', fontSize: numFontSize, fontWeight: 600, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{daysRemaining}</span>
+              <span style={{ fontSize: labelFontSize, color: '#9d9d9d', letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 500 }}>days</span>
             </div>
-            <span style={{ fontSize: 10, color: '#6a6a6a', letterSpacing: '0.04em' }}>until Avengers: Doomsday</span>
+            {!isMobile && (
+              <span style={{ fontSize: 10, color: '#6a6a6a', letterSpacing: '0.04em' }}>until Avengers: Doomsday</span>
+            )}
           </div>
         </div>
 
         <div style={{ width: 1, background: 'linear-gradient(180deg, transparent, rgba(255,255,255,0.12) 50%, transparent)' }} />
 
-        <div style={{ display: 'flex', alignItems: 'center', padding: '8px 6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', padding: isMobile ? '6px 0' : '8px 6px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-              <span style={{ fontFamily: 'Geist Mono, ui-monospace, monospace', fontSize: 24, fontWeight: 600, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{filmsLeft}</span>
-              <span style={{ fontSize: 11, color: '#9d9d9d', letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 500 }}>films left</span>
+              <span style={{ fontFamily: 'Geist Mono, ui-monospace, monospace', fontSize: numFontSize, fontWeight: 600, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{filmsLeft}</span>
+              <span style={{ fontSize: labelFontSize, color: '#9d9d9d', letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 500 }}>{isMobile ? 'left' : 'films left'}</span>
             </div>
-            <span style={{ fontSize: 10, color: paceTone, letterSpacing: '0.04em', fontVariantNumeric: 'tabular-nums' }}>~1 every {daysPerFilm.toFixed(1)} days · {paceLabel}</span>
+            {!isMobile && (
+              <span style={{ fontSize: 10, color: paceTone, letterSpacing: '0.04em', fontVariantNumeric: 'tabular-nums' }}>~1 every {daysPerFilm.toFixed(1)} days · {paceLabel}</span>
+            )}
           </div>
         </div>
 
-        <div style={{ width: 1, background: 'linear-gradient(180deg, transparent, rgba(255,255,255,0.12) 50%, transparent)' }} />
+        {!isMobile && (
+          <>
+            <div style={{ width: 1, background: 'linear-gradient(180deg, transparent, rgba(255,255,255,0.12) 50%, transparent)' }} />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '8px 0 8px 6px' }}>
-          {Array.from({ length: 10 }).map((_, i) => (
-            <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: i < dotsLit ? '#E52424' : 'rgba(255,255,255,0.12)' }} />
-          ))}
-        </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '8px 0 8px 6px' }}>
+              {Array.from({ length: 10 }).map((_, i) => (
+                <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: i < dotsLit ? '#E52424' : 'rgba(255,255,255,0.12)' }} />
+              ))}
+            </div>
+          </>
+        )}
 
         <button
           onClick={handleResume}
           disabled={!nextUnwatched}
+          aria-label="Resume next unwatched film"
           style={{
-            display: 'flex', alignItems: 'center', gap: 6, padding: '0 22px',
+            display: 'flex', alignItems: 'center', gap: 6, padding: isMobile ? '0 14px' : '0 22px',
             background: '#fff', color: '#0a0a0c',
             border: 'none', borderRadius: 100,
             fontFamily: 'inherit', fontSize: 12, fontWeight: 600, letterSpacing: '0.04em',
             cursor: nextUnwatched ? 'pointer' : 'default',
             opacity: nextUnwatched ? 1 : 0.5,
+            flexShrink: 0,
           }}
         >
-          <span>Resume</span>
+          {!isMobile && <span>Resume</span>}
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
             <path d="M5 12h14m-5-5l5 5-5 5" stroke="#0a0a0c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
@@ -665,36 +692,35 @@ export default function App() {
           <p style={{ fontSize: 12, color: '#aaa', margin: 0, fontVariantNumeric: 'tabular-nums' }}>{pct}% complete</p>
         </div>
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: '1rem' }}>
-          {['all', 'watched', 'unwatched'].map(f => (
-            <button key={f} onClick={() => setFilter(f)} style={{
-              padding: '7px 18px', fontSize: 13,
-              background: filter === f ? '#1a1a1a' : 'transparent',
-              color: filter === f ? '#fff' : '#888',
-              border: `1px solid ${filter === f ? '#1a1a1a' : '#D5D2CA'}`,
-              borderRadius: 100, cursor: 'pointer',
-              transitionProperty: 'background-color, color, border-color',
-              transitionDuration: '0.15s',
-              transitionTimingFunction: 'cubic-bezier(0.2, 0, 0, 1)',
-              fontFamily: 'Geist, system-ui, sans-serif',
-            }}>
-              {f.charAt(0).toUpperCase() + f.slice(1)}
-            </button>
-          ))}
-        </div>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: 12, marginBottom: '2.5rem', flexWrap: 'wrap',
+        }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {['all', 'watched', 'unwatched'].map(f => (
+              <button key={f} onClick={() => setFilter(f)} style={{
+                padding: '7px 18px', fontSize: 13,
+                background: filter === f ? '#1a1a1a' : 'transparent',
+                color: filter === f ? '#fff' : '#888',
+                border: `1px solid ${filter === f ? '#1a1a1a' : '#D5D2CA'}`,
+                borderRadius: 100, cursor: 'pointer',
+                transitionProperty: 'background-color, color, border-color',
+                transitionDuration: '0.15s',
+                transitionTimingFunction: 'cubic-bezier(0.2, 0, 0, 1)',
+                fontFamily: 'Geist, system-ui, sans-serif',
+              }}>
+                {f.charAt(0).toUpperCase() + f.slice(1)}
+              </button>
+            ))}
+          </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '2.5rem', flexWrap: 'wrap' }}>
-          <span style={{
-            fontFamily: 'Geist Mono, ui-monospace, monospace',
-            fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#aaa',
-          }}>Sort</span>
           <div style={{
             display: 'inline-flex', padding: 3, gap: 2,
             background: '#EBE7DD', borderRadius: 100,
           }}>
             {[
               { id: 'chronological', label: 'Chronological' },
-              { id: 'release', label: 'Release Order' },
+              { id: 'release', label: 'Release' },
             ].map(({ id, label }) => {
               const active = sortMode === id
               return (
