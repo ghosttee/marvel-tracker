@@ -73,6 +73,14 @@ const MCU_CHRONOLOGICAL_IDS = [
 ]
 const CHRONO_POSITION = Object.fromEntries(MCU_CHRONOLOGICAL_IDS.map((id, i) => [id, i]))
 
+const NON_MCU_ENTRIES = [
+  { tmdbId: 84958, type: 'tv', title: 'Loki (Seasons 1 & 2)', year: 2021, kindLabel: 'Disney+ Series', note: 'Binge both seasons together — essential for understanding the multiverse' },
+  { tmdbId: 36657, type: 'movie', title: 'X-Men (2000)', year: 2000, kindLabel: 'X-Men Film', note: 'Introduces Xavier, Magneto, Mystique and Cyclops — all confirmed for Doomsday' },
+  { tmdbId: 36668, type: 'movie', title: 'X2: X-Men United (2003)', year: 2003, kindLabel: 'X-Men Film', note: "Only film featuring Alan Cumming's Nightcrawler, confirmed for Doomsday" },
+  { tmdbId: 127585, type: 'movie', title: 'X-Men: Days of Future Past (2014)', year: 2014, kindLabel: 'X-Men Film', note: 'Essential — connects timelines and sets up the multiverse crossover' },
+]
+const NON_MCU_INDEX = Object.fromEntries(NON_MCU_ENTRIES.map((m, i) => [m.title, i + 1]))
+
 const TMDB_IMG = "https://image.tmdb.org/t/p/w342"
 const TMDB_IMG_LG = "https://image.tmdb.org/t/p/w780"
 const TMDB_KEY = import.meta.env.VITE_TMDB_KEY || ""
@@ -110,10 +118,218 @@ function ModalSection({ children, style }) {
   )
 }
 
+function TicketCard({ movie, ticketNo, stubMid, stubBottom, isWatched, rating, isSaving, posterPath, showEarth828, onOpen, onToggleWatched, onSetRating }) {
+  const stubBg = isWatched ? '#1a1a1a' : '#FAF7F1'
+  const stubFg = isWatched ? '#fff' : '#1a1a1a'
+  const stubMuted = isWatched ? '#888' : '#999'
+  const stubFaint = isWatched ? '#888' : '#aaa'
+  const perforation = isWatched ? '#555' : '#C9C5BA'
+
+  return (
+    <div data-movie-id={movie.tmdbId} onClick={() => onOpen(movie)} style={{
+      borderRadius: 8, overflow: 'hidden', background: '#fff', cursor: 'pointer',
+      boxShadow: isWatched
+        ? '0 4px 20px rgba(0,0,0,0.10)'
+        : '0 1px 2px rgba(0,0,0,0.04), 0 1px 0 rgba(0,0,0,0.02)',
+      outline: isWatched ? '1.5px solid #1a1a1a' : '1px solid #E5E2DA',
+      transition: 'box-shadow 0.2s ease, transform 0.18s cubic-bezier(0.2, 0, 0, 1)',
+    }}
+      onMouseEnter={e => {
+        e.currentTarget.style.transform = 'translateY(-2px)'
+        e.currentTarget.style.boxShadow = isWatched
+          ? '0 14px 32px -10px rgba(0,0,0,0.20), 0 2px 4px rgba(0,0,0,0.06)'
+          : '0 12px 28px -8px rgba(0,0,0,0.14), 0 1px 2px rgba(0,0,0,0.04)'
+        const stub = e.currentTarget.querySelector('[data-stub]')
+        if (stub) stub.style.transform = 'translateX(-3px)'
+        const body = e.currentTarget.querySelector('[data-body]')
+        if (body) body.style.transform = 'translateX(2px)'
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = 'none'
+        e.currentTarget.style.boxShadow = isWatched
+          ? '0 4px 20px rgba(0,0,0,0.10)'
+          : '0 1px 2px rgba(0,0,0,0.04), 0 1px 0 rgba(0,0,0,0.02)'
+        const stub = e.currentTarget.querySelector('[data-stub]')
+        if (stub) stub.style.transform = 'none'
+        const body = e.currentTarget.querySelector('[data-body]')
+        if (body) body.style.transform = 'none'
+      }}
+    >
+      <div style={{ display: 'flex', position: 'relative' }}>
+        <div
+          data-stub
+          role="button"
+          aria-label={isWatched ? 'Mark as unwatched' : 'Mark as watched'}
+          tabIndex={0}
+          onClick={e => { e.stopPropagation(); onToggleWatched(movie) }}
+          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onToggleWatched(movie) } }}
+          style={{
+            width: 76, flexShrink: 0,
+            padding: '14px 6px',
+            background: stubBg,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between',
+            gap: 8,
+            position: 'relative',
+            cursor: 'pointer',
+            transitionProperty: 'transform, background-color',
+            transitionDuration: '0.25s, 0.2s',
+            transitionTimingFunction: 'cubic-bezier(0.2, 0, 0, 1)',
+            willChange: 'transform',
+          }}>
+          <p style={{
+            fontFamily: 'Geist Mono, ui-monospace, monospace',
+            fontSize: 7, letterSpacing: '0.24em',
+            color: stubFg, margin: 0, fontWeight: 700, textAlign: 'center',
+          }}>{isWatched ? 'VOID' : 'ADMIT ONE'}</p>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <span style={{
+              fontFamily: 'Geist Mono, ui-monospace, monospace',
+              fontSize: 22, fontWeight: 700, color: stubFg,
+              lineHeight: 1, fontVariantNumeric: 'tabular-nums',
+            }}>{ticketNo}</span>
+            <span style={{
+              fontFamily: 'Geist Mono, ui-monospace, monospace',
+              fontSize: 7, color: stubMuted,
+              letterSpacing: '0.18em', marginTop: 3,
+            }}>{stubMid}</span>
+          </div>
+          <p style={{
+            fontFamily: 'Geist Mono, ui-monospace, monospace',
+            fontSize: 7, letterSpacing: '0.22em',
+            color: stubFaint, margin: 0, textAlign: 'center',
+          }}>{stubBottom}</p>
+          {isWatched && (
+            <div aria-hidden style={{
+              position: 'absolute', top: 8, right: -7,
+              width: 14, height: 14, borderRadius: '50%',
+              background: '#F5F3EE',
+            }} />
+          )}
+          {isSaving && (
+            <div aria-hidden style={{
+              position: 'absolute', bottom: 8, right: 6,
+              width: 6, height: 6, borderRadius: '50%',
+              background: '#F59E0B',
+            }} />
+          )}
+        </div>
+        <div data-body style={{
+          flex: 1, display: 'flex',
+          padding: '12px 14px', gap: 12, alignItems: 'center',
+          minWidth: 0,
+          borderLeft: `1px dashed ${perforation}`,
+          transition: 'transform 0.25s cubic-bezier(0.2, 0, 0, 1)',
+          willChange: 'transform',
+        }}>
+          <div style={{
+            width: 54, height: 81, borderRadius: 4, overflow: 'hidden',
+            flexShrink: 0, background: '#F0EDE8',
+            outline: '1px solid rgba(0,0,0,0.08)',
+            position: 'relative',
+          }}>
+            {posterPath ? (
+              <img src={`${TMDB_IMG}${posterPath}`} alt={movie.title}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            ) : (
+              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 6 }}>
+                <span style={{ fontSize: 9, color: '#bbb', textAlign: 'center', lineHeight: 1.3 }}>{movie.title}</span>
+              </div>
+            )}
+            {isWatched && (
+              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                    <path d="M20 6L9 17L4 12" stroke="#1a1a1a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+              </div>
+            )}
+          </div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            <p style={{
+              fontFamily: 'Geist Mono, ui-monospace, monospace',
+              fontSize: 8, letterSpacing: '0.22em', color: '#aaa',
+              margin: 0, textTransform: 'uppercase', fontWeight: 500,
+            }}>{isWatched ? 'Watched' : 'Now showing'}</p>
+            {showEarth828 && (
+              <span style={{
+                alignSelf: 'flex-start',
+                marginTop: 4,
+                padding: '2px 6px',
+                fontFamily: 'Geist Mono, ui-monospace, monospace',
+                fontSize: 8, letterSpacing: '0.16em',
+                color: '#1a1a1a', background: '#F0E8D6',
+                border: '0.5px solid #D6CDB6',
+                borderRadius: 3, textTransform: 'uppercase',
+                fontWeight: 600, lineHeight: 1.2,
+              }}>Earth-828 · 1965</span>
+            )}
+            <h3 style={{
+              fontFamily: 'Georgia, serif', fontStyle: 'italic',
+              fontSize: 16, color: '#1a1a1a',
+              margin: '3px 0 0', fontWeight: 400, lineHeight: 1.18,
+              textWrap: 'balance',
+              overflow: 'hidden',
+              display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+            }}>{movie.title}</h3>
+            <div style={{ display: 'flex', gap: 14, marginTop: 8, alignItems: 'flex-end' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <span style={{
+                  fontFamily: 'Geist Mono, ui-monospace, monospace',
+                  fontSize: 7, letterSpacing: '0.22em', color: '#ccc',
+                  textTransform: 'uppercase',
+                }}>Year</span>
+                <span style={{
+                  fontFamily: 'Geist Mono, ui-monospace, monospace',
+                  fontSize: 11, color: '#1a1a1a',
+                  fontVariantNumeric: 'tabular-nums',
+                }}>{movie.year}</span>
+              </div>
+              {isWatched ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <span style={{
+                    fontFamily: 'Geist Mono, ui-monospace, monospace',
+                    fontSize: 7, letterSpacing: '0.22em', color: '#ccc',
+                    textTransform: 'uppercase',
+                  }}>Rating</span>
+                  <div style={{ display: 'flex' }} onClick={e => e.stopPropagation()}>
+                    {[1,2,3,4,5].map(s => (
+                      <span key={s} onClick={e => onSetRating(movie, s, e)}
+                        style={{
+                          fontSize: 12, cursor: 'pointer',
+                          color: rating >= s ? '#1a1a1a' : '#DDD',
+                          userSelect: 'none', lineHeight: 1,
+                          padding: '4px 2px', margin: '-4px -1px',
+                        }}>★</span>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <span style={{
+                    fontFamily: 'Geist Mono, ui-monospace, monospace',
+                    fontSize: 7, letterSpacing: '0.22em', color: '#ccc',
+                    textTransform: 'uppercase',
+                  }}>Status</span>
+                  <span style={{
+                    fontFamily: 'Geist Mono, ui-monospace, monospace',
+                    fontSize: 11, color: '#1a1a1a',
+                  }}>OPEN</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function MovieModal({ movie, poster, overview, cast, isWatched, rating, onClose, onToggleWatch, onRate }) {
   const isMobile = useIsMobile()
-  const meta = PHASE_META[movie.phase]
-  const fallbackCharacters = movie.characters
+  const isNonMcu = !!movie.note
+  const meta = isNonMcu ? null : PHASE_META[movie.phase]
+  const fallbackCharacters = (movie.characters || [])
     .map(c => CHARACTER_NAMES[c])
     .filter(Boolean)
     .map(name => ({ name, character: '' }))
@@ -250,7 +466,11 @@ function MovieModal({ movie, poster, overview, cast, isWatched, rating, onClose,
         >
           <ModalSection>
             <p style={{ fontSize: 11, color: '#9c9486', margin: 0, letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 500 }}>
-              {meta.label} <span style={{ color: '#ccc', margin: '0 6px' }}>·</span> {meta.saga}
+              {isNonMcu ? (
+                <>Required Viewing <span style={{ color: '#ccc', margin: '0 6px' }}>·</span> {movie.kindLabel}</>
+              ) : (
+                <>{meta.label} <span style={{ color: '#ccc', margin: '0 6px' }}>·</span> {meta.saga}</>
+              )}
             </p>
           </ModalSection>
 
@@ -273,6 +493,41 @@ function MovieModal({ movie, poster, overview, cast, isWatched, rating, onClose,
               )}
             </div>
           </ModalSection>
+
+          {isNonMcu && movie.note && (
+            <ModalSection style={{ marginTop: 20 }}>
+              <div style={{
+                background: 'linear-gradient(135deg, #FFF4D6 0%, #FFEABD 100%)',
+                border: '0.5px solid #E8D49A',
+                borderRadius: 14,
+                padding: '14px 16px',
+                display: 'flex', gap: 12, alignItems: 'flex-start',
+              }}>
+                <div aria-hidden style={{
+                  flexShrink: 0,
+                  width: 28, height: 28, borderRadius: '50%',
+                  background: '#1a1a1a',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 17v.01M12 7v6" stroke="#FFF4D6" strokeWidth="2.4" strokeLinecap="round"/>
+                  </svg>
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{
+                    fontFamily: 'Geist Mono, ui-monospace, monospace',
+                    fontSize: 10, letterSpacing: '0.18em',
+                    color: '#1a1a1a', margin: '0 0 4px',
+                    textTransform: 'uppercase', fontWeight: 600,
+                  }}>Why watch this?</p>
+                  <p style={{
+                    fontSize: 14, color: '#1a1a1a', margin: 0,
+                    lineHeight: 1.5, textWrap: 'pretty',
+                  }}>{movie.note}</p>
+                </div>
+              </div>
+            </ModalSection>
+          )}
 
           {displayCast.length > 0 && (
             <ModalSection style={{ marginTop: 24 }}>
@@ -526,18 +781,23 @@ export default function App() {
   // Fetch posters from TMDB
   useEffect(() => {
     if (!TMDB_KEY) return
+    const allEntries = [
+      ...MCU_MOVIES.map(m => ({ tmdbId: m.tmdbId, type: 'movie' })),
+      ...NON_MCU_ENTRIES.map(m => ({ tmdbId: m.tmdbId, type: m.type })),
+    ]
     const fetchAll = async () => {
-      for (let i = 0; i < MCU_MOVIES.length; i += 6) {
-        const batch = MCU_MOVIES.slice(i, i + 6)
+      for (let i = 0; i < allEntries.length; i += 6) {
+        const batch = allEntries.slice(i, i + 6)
         const results = {}, overviewResults = {}, dateResults = {}
         await Promise.all(batch.map(async m => {
           try {
-            const res = await fetch(`https://api.themoviedb.org/3/movie/${m.tmdbId}?api_key=${TMDB_KEY}`)
+            const res = await fetch(`https://api.themoviedb.org/3/${m.type}/${m.tmdbId}?api_key=${TMDB_KEY}`)
             if (res.ok) {
               const d = await res.json()
               if (d.poster_path) results[m.tmdbId] = d.poster_path
               if (d.overview) overviewResults[m.tmdbId] = d.overview
-              if (d.release_date) dateResults[m.tmdbId] = d.release_date
+              const date = d.release_date || d.first_air_date
+              if (date) dateResults[m.tmdbId] = date
             }
           } catch (e) {}
         }))
@@ -554,7 +814,8 @@ export default function App() {
     if (!selectedMovie || !TMDB_KEY) return
     if (credits[selectedMovie.tmdbId]) return
     const id = selectedMovie.tmdbId
-    fetch(`https://api.themoviedb.org/3/movie/${id}/credits?api_key=${TMDB_KEY}`)
+    const kind = selectedMovie.type === 'tv' ? 'tv' : 'movie'
+    fetch(`https://api.themoviedb.org/3/${kind}/${id}/credits?api_key=${TMDB_KEY}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (!data) return
@@ -746,221 +1007,23 @@ export default function App() {
 
         <div style={{ marginBottom: '3.5rem' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
-            {sortedMovies.map(movie => {
-                  const isWatched = watched[movie.title]
-                  const rating = ratings[movie.title]
-                  const isSaving = saving === movie.title
-                  const posterPath = posters[movie.tmdbId]
-
-                  const ticketNo = MCU_INDEX[movie.title].toString().padStart(3, '0')
-                  const stubBg = isWatched ? '#1a1a1a' : '#FAF7F1'
-                  const stubFg = isWatched ? '#fff' : '#1a1a1a'
-                  const stubMuted = isWatched ? '#888' : '#999'
-                  const stubFaint = isWatched ? '#888' : '#aaa'
-                  const perforation = isWatched ? '#555' : '#C9C5BA'
-
-                  return (
-                    <div key={movie.title} data-movie-id={movie.tmdbId} onClick={() => setSelectedMovie(movie)} style={{
-                      borderRadius: 8, overflow: 'hidden', background: '#fff', cursor: 'pointer',
-                      boxShadow: isWatched
-                        ? '0 4px 20px rgba(0,0,0,0.10)'
-                        : '0 1px 2px rgba(0,0,0,0.04), 0 1px 0 rgba(0,0,0,0.02)',
-                      outline: isWatched ? '1.5px solid #1a1a1a' : '1px solid #E5E2DA',
-                      transition: 'box-shadow 0.2s ease, transform 0.18s cubic-bezier(0.2, 0, 0, 1)',
-                    }}
-                      onMouseEnter={e => {
-                        e.currentTarget.style.transform = 'translateY(-2px)'
-                        e.currentTarget.style.boxShadow = isWatched
-                          ? '0 14px 32px -10px rgba(0,0,0,0.20), 0 2px 4px rgba(0,0,0,0.06)'
-                          : '0 12px 28px -8px rgba(0,0,0,0.14), 0 1px 2px rgba(0,0,0,0.04)'
-                        const stub = e.currentTarget.querySelector('[data-stub]')
-                        if (stub) stub.style.transform = 'translateX(-3px)'
-                        const body = e.currentTarget.querySelector('[data-body]')
-                        if (body) body.style.transform = 'translateX(2px)'
-                      }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.transform = 'none'
-                        e.currentTarget.style.boxShadow = isWatched
-                          ? '0 4px 20px rgba(0,0,0,0.10)'
-                          : '0 1px 2px rgba(0,0,0,0.04), 0 1px 0 rgba(0,0,0,0.02)'
-                        const stub = e.currentTarget.querySelector('[data-stub]')
-                        if (stub) stub.style.transform = 'none'
-                        const body = e.currentTarget.querySelector('[data-body]')
-                        if (body) body.style.transform = 'none'
-                      }}
-                    >
-                      <div style={{ display: 'flex', position: 'relative' }}>
-                        {/* Stub */}
-                        <div
-                          data-stub
-                          role="button"
-                          aria-label={isWatched ? 'Mark as unwatched' : 'Mark as watched'}
-                          tabIndex={0}
-                          onClick={e => { e.stopPropagation(); toggleWatched(movie) }}
-                          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); toggleWatched(movie) } }}
-                          style={{
-                          width: 76, flexShrink: 0,
-                          padding: '14px 6px',
-                          background: stubBg,
-                          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between',
-                          gap: 8,
-                          position: 'relative',
-                          cursor: 'pointer',
-                          transitionProperty: 'transform, background-color',
-                          transitionDuration: '0.25s, 0.2s',
-                          transitionTimingFunction: 'cubic-bezier(0.2, 0, 0, 1)',
-                          willChange: 'transform',
-                        }}>
-                          <p style={{
-                            fontFamily: 'Geist Mono, ui-monospace, monospace',
-                            fontSize: 7, letterSpacing: '0.24em',
-                            color: stubFg, margin: 0, fontWeight: 700, textAlign: 'center',
-                          }}>{isWatched ? 'VOID' : 'ADMIT ONE'}</p>
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                            <span style={{
-                              fontFamily: 'Geist Mono, ui-monospace, monospace',
-                              fontSize: 22, fontWeight: 700, color: stubFg,
-                              lineHeight: 1, fontVariantNumeric: 'tabular-nums',
-                            }}>{ticketNo}</span>
-                            <span style={{
-                              fontFamily: 'Geist Mono, ui-monospace, monospace',
-                              fontSize: 7, color: stubMuted,
-                              letterSpacing: '0.18em', marginTop: 3,
-                            }}>MCU</span>
-                          </div>
-                          <p style={{
-                            fontFamily: 'Geist Mono, ui-monospace, monospace',
-                            fontSize: 7, letterSpacing: '0.22em',
-                            color: stubFaint, margin: 0, textAlign: 'center',
-                          }}>PH {PHASE_ROMAN[movie.phase]}</p>
-                          {isWatched && (
-                            <div aria-hidden style={{
-                              position: 'absolute', top: 8, right: -7,
-                              width: 14, height: 14, borderRadius: '50%',
-                              background: '#F5F3EE',
-                            }} />
-                          )}
-                          {isSaving && (
-                            <div aria-hidden style={{
-                              position: 'absolute', bottom: 8, right: 6,
-                              width: 6, height: 6, borderRadius: '50%',
-                              background: '#F59E0B',
-                            }} />
-                          )}
-                        </div>
-                        {/* Body */}
-                        <div data-body style={{
-                          flex: 1, display: 'flex',
-                          padding: '12px 14px', gap: 12, alignItems: 'center',
-                          minWidth: 0,
-                          borderLeft: `1px dashed ${perforation}`,
-                          transition: 'transform 0.25s cubic-bezier(0.2, 0, 0, 1)',
-                          willChange: 'transform',
-                        }}>
-                          <div
-                            style={{
-                              width: 54, height: 81, borderRadius: 4, overflow: 'hidden',
-                              flexShrink: 0, background: '#F0EDE8',
-                              outline: '1px solid rgba(0,0,0,0.08)',
-                              position: 'relative',
-                            }}>
-                            {posterPath ? (
-                              <img src={`${TMDB_IMG}${posterPath}`} alt={movie.title}
-                                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                            ) : (
-                              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 6 }}>
-                                <span style={{ fontSize: 9, color: '#bbb', textAlign: 'center', lineHeight: 1.3 }}>{movie.title}</span>
-                              </div>
-                            )}
-                            {isWatched && (
-                              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                                    <path d="M20 6L9 17L4 12" stroke="#1a1a1a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-                                  </svg>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                            <p style={{
-                              fontFamily: 'Geist Mono, ui-monospace, monospace',
-                              fontSize: 8, letterSpacing: '0.22em', color: '#aaa',
-                              margin: 0, textTransform: 'uppercase', fontWeight: 500,
-                            }}>{isWatched ? 'Watched' : 'Now showing'}</p>
-                            {movie.tmdbId === 617126 && (
-                              <span style={{
-                                alignSelf: 'flex-start',
-                                marginTop: 4,
-                                padding: '2px 6px',
-                                fontFamily: 'Geist Mono, ui-monospace, monospace',
-                                fontSize: 8, letterSpacing: '0.16em',
-                                color: '#1a1a1a', background: '#F0E8D6',
-                                border: '0.5px solid #D6CDB6',
-                                borderRadius: 3, textTransform: 'uppercase',
-                                fontWeight: 600, lineHeight: 1.2,
-                              }}>Earth-828 · 1965</span>
-                            )}
-                            <h3 style={{
-                              fontFamily: 'Georgia, serif', fontStyle: 'italic',
-                              fontSize: 16, color: '#1a1a1a',
-                              margin: '3px 0 0', fontWeight: 400, lineHeight: 1.18,
-                              textWrap: 'balance',
-                              overflow: 'hidden',
-                              display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-                            }}>{movie.title}</h3>
-                            <div style={{ display: 'flex', gap: 14, marginTop: 8, alignItems: 'flex-end' }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                <span style={{
-                                  fontFamily: 'Geist Mono, ui-monospace, monospace',
-                                  fontSize: 7, letterSpacing: '0.22em', color: '#ccc',
-                                  textTransform: 'uppercase',
-                                }}>Year</span>
-                                <span style={{
-                                  fontFamily: 'Geist Mono, ui-monospace, monospace',
-                                  fontSize: 11, color: '#1a1a1a',
-                                  fontVariantNumeric: 'tabular-nums',
-                                }}>{movie.year}</span>
-                              </div>
-                              {isWatched ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                  <span style={{
-                                    fontFamily: 'Geist Mono, ui-monospace, monospace',
-                                    fontSize: 7, letterSpacing: '0.22em', color: '#ccc',
-                                    textTransform: 'uppercase',
-                                  }}>Rating</span>
-                                  <div style={{ display: 'flex' }} onClick={e => e.stopPropagation()}>
-                                    {[1,2,3,4,5].map(s => (
-                                      <span key={s} onClick={e => setRating(movie, s, e)}
-                                        style={{
-                                          fontSize: 12, cursor: 'pointer',
-                                          color: rating >= s ? '#1a1a1a' : '#DDD',
-                                          userSelect: 'none', lineHeight: 1,
-                                          padding: '4px 2px', margin: '-4px -1px',
-                                        }}>★</span>
-                                    ))}
-                                  </div>
-                                </div>
-                              ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                  <span style={{
-                                    fontFamily: 'Geist Mono, ui-monospace, monospace',
-                                    fontSize: 7, letterSpacing: '0.22em', color: '#ccc',
-                                    textTransform: 'uppercase',
-                                  }}>Status</span>
-                                  <span style={{
-                                    fontFamily: 'Geist Mono, ui-monospace, monospace',
-                                    fontSize: 11, color: '#1a1a1a',
-                                  }}>OPEN</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )
-            })}
+            {sortedMovies.map(movie => (
+              <TicketCard
+                key={movie.title}
+                movie={movie}
+                ticketNo={MCU_INDEX[movie.title].toString().padStart(3, '0')}
+                stubMid="MCU"
+                stubBottom={`PH ${PHASE_ROMAN[movie.phase]}`}
+                isWatched={!!watched[movie.title]}
+                rating={ratings[movie.title]}
+                isSaving={saving === movie.title}
+                posterPath={posters[movie.tmdbId]}
+                showEarth828={movie.tmdbId === 617126}
+                onOpen={setSelectedMovie}
+                onToggleWatched={toggleWatched}
+                onSetRating={setRating}
+              />
+            ))}
           </div>
         </div>
 
@@ -969,6 +1032,51 @@ export default function App() {
             No films match the current filter.
           </p>
         )}
+
+        <div style={{ marginTop: '4rem', marginBottom: '3rem' }}>
+          <div style={{ marginBottom: '1.25rem' }}>
+            <p style={{
+              fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase',
+              color: '#9c9486', margin: '0 0 6px', fontWeight: 500,
+            }}>
+              Required Viewing
+            </p>
+            <h2 style={{
+              fontSize: 24, fontWeight: 400, lineHeight: 1.15,
+              color: '#1a1a1a', margin: '0 0 8px',
+              fontFamily: 'Georgia, serif', fontStyle: 'italic',
+              textWrap: 'balance',
+            }}>
+              Essential Non-MCU
+            </h2>
+            <p style={{
+              fontSize: 14, color: '#666', margin: 0,
+              lineHeight: 1.55, textWrap: 'pretty', maxWidth: 540,
+            }}>
+              Not part of the MCU, but indispensable before Doomsday — characters and timelines from these
+              films and series collide with the Avengers on screen.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+            {NON_MCU_ENTRIES.map(entry => (
+              <TicketCard
+                key={entry.title}
+                movie={entry}
+                ticketNo={NON_MCU_INDEX[entry.title].toString().padStart(3, '0')}
+                stubMid="EXT"
+                stubBottom={entry.type === 'tv' ? 'D+' : 'FILM'}
+                isWatched={!!watched[entry.title]}
+                rating={ratings[entry.title]}
+                isSaving={saving === entry.title}
+                posterPath={posters[entry.tmdbId]}
+                onOpen={setSelectedMovie}
+                onToggleWatched={toggleWatched}
+                onSetRating={setRating}
+              />
+            ))}
+          </div>
+        </div>
 
         <p style={{ fontSize: 12, color: '#ccc', textAlign: 'center', marginTop: '1rem', marginBottom: '6rem' }}>
           Poster images via The Movie Database (TMDB)
