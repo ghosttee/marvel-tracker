@@ -499,19 +499,26 @@ export default function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
       setAuthLoading(false)
-      if (session?.user) loadUserData()
+      if (session?.user) loadUserData(session.user.id)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
-      if (session?.user) loadUserData()
+      if (session?.user) loadUserData(session.user.id)
     })
 
     return () => subscription.unsubscribe()
   }, [])
 
-  async function loadUserData() {
-    const { data, error } = await supabase.from('marvel_tracker').select('*')
+  async function loadUserData(userId) {
+    const { data, error } = await supabase
+      .from('marvel_tracker')
+      .select('*')
+      .eq('user_id', userId)
+    if (error) {
+      console.error('Failed to load watch history:', error.message, error)
+      return
+    }
     if (data) {
       const w = {}, r = {}
       data.forEach(row => {
@@ -583,9 +590,13 @@ export default function App() {
     const newVal = !watched[key]
     setWatched(p => ({ ...p, [key]: newVal }))
     setSaving(key)
-    await supabase.from('marvel_tracker').upsert({
-      id: key, watched: newVal, rating: ratings[key] || null, user_id: user.id
-    })
+    const { error } = await supabase
+      .from('marvel_tracker')
+      .upsert(
+        { id: key, watched: newVal, rating: ratings[key] ?? null, user_id: user.id },
+        { onConflict: 'user_id,id' },
+      )
+    if (error) console.error('Failed to save watched state for', key, '—', error.message, error)
     setSaving(null)
   }
 
@@ -595,9 +606,13 @@ export default function App() {
     const key = movie.title
     const r = ratings[key] === val ? null : val
     setRatings(p => ({ ...p, [key]: r }))
-    await supabase.from('marvel_tracker').upsert({
-      id: key, watched: watched[key] || false, rating: r, user_id: user.id
-    })
+    const { error } = await supabase
+      .from('marvel_tracker')
+      .upsert(
+        { id: key, watched: watched[key] || false, rating: r, user_id: user.id },
+        { onConflict: 'user_id,id' },
+      )
+    if (error) console.error('Failed to save rating for', key, '—', error.message, error)
   }
 
   const filtered = MCU_MOVIES.filter(m =>
